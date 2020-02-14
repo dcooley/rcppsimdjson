@@ -9,15 +9,14 @@ namespace from_json {
 
   inline SEXP json_to_sexp( simdjson::ParsedJson& pj ) {
     
-    Rcpp::Rcout << "json_to_sexp" << std::endl;
-    
     Rcpp::List res(1);
     
     simdjson::ParsedJson::Iterator pjh( pj ); 
     
     const size_t d = pjh.get_depth();
     
-    Rcpp::Rcout << "d: " << d << std::endl;
+    
+    
     
     return res;
   }
