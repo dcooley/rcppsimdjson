@@ -2,6 +2,8 @@
 #include "simdjson.h"
 #include "from_json/from_json.hpp"
 
+
+
 // [[Rcpp::export]]
 SEXP rcpp_from_json( std::string json ) {
   
@@ -18,5 +20,7 @@ SEXP rcpp_from_json( std::string json ) {
     Rcpp::stop(pj.get_error_message());
   }
   
-  return rcppsimdjson::from_json::json_to_sexp( pj );
+  simdjson::ParsedJson::Iterator pjh( pj );
+    
+  return rcppsimdjson::from_json::json_to_sexp( pjh );
 }
