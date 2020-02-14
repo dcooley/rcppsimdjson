@@ -5,6 +5,17 @@
 
 using namespace Rcpp;
 
+// rcpp_get_json_length
+R_xlen_t rcpp_get_json_length(std::string json);
+RcppExport SEXP _RcppSimdJson_rcpp_get_json_length(SEXP jsonSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type json(jsonSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_json_length(json));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_from_json
 SEXP rcpp_from_json(std::string json);
 RcppExport SEXP _RcppSimdJson_rcpp_from_json(SEXP jsonSEXP) {
@@ -29,6 +40,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_RcppSimdJson_rcpp_get_json_length", (DL_FUNC) &_RcppSimdJson_rcpp_get_json_length, 1},
     {"_RcppSimdJson_rcpp_from_json", (DL_FUNC) &_RcppSimdJson_rcpp_from_json, 1},
     {"_RcppSimdJson_validateJSON", (DL_FUNC) &_RcppSimdJson_validateJSON, 1},
     {NULL, NULL, 0}

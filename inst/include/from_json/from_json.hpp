@@ -25,8 +25,16 @@ namespace from_json {
         }
         pjh.up();
       }
-    //}
-    
+    // } else if ( pjh.is_array() ) {
+    //   Rcpp::Rcout << "is_array" << std::endl;
+    //   if( pjh.down() ) {
+    //     while( pjh.next() ) {
+    //       ++count;
+    //       pjh.next();
+    //     }
+    //   pjh.up();
+    //   }
+    // }
     
     return count;
     
