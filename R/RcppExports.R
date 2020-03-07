@@ -13,3 +13,11 @@ rcpp_from_json <- function(json) {
     .Call(`_RcppSimdJson_validateJSON`, filename)
 }
 
+.cppVersion <- function() {
+    .Call(`_RcppSimdJson_cppVersion`)
+}
+
+.unsupportedArchitecture <- function() {
+    .Call(`_RcppSimdJson_unsupportedArchitecture`)
+}
+

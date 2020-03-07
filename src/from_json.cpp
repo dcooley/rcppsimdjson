@@ -28,7 +28,10 @@ simdjson::ParsedJson::Iterator parse_json( std::string& json ) {
 // [[Rcpp::export]]
 R_xlen_t rcpp_get_json_length( std::string json ) {
   simdjson::ParsedJson::Iterator pjh = parse_json( json );
-  return rcppsimdjson::from_json::get_json_length( pjh );
+  R_xlen_t count = 0;
+  //rcppsimdjson::from_json::get_json_length( pjh, count );
+  rcppsimdjson::from_json::compute_dump( pjh );
+  return count;
 }
 
 
