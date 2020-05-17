@@ -13,6 +13,10 @@ rcpp_from_json <- function(json) {
     .Call(`_RcppSimdJson_validateJSON`, filename)
 }
 
+parseExample <- function() {
+    invisible(.Call(`_RcppSimdJson_parseExample`))
+}
+
 .cppVersion <- function() {
     .Call(`_RcppSimdJson_cppVersion`)
 }
