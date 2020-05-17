@@ -5,25 +5,16 @@
 
 using namespace Rcpp;
 
-// rcpp_get_json_length
-R_xlen_t rcpp_get_json_length(std::string json);
-RcppExport SEXP _RcppSimdJson_rcpp_get_json_length(SEXP jsonSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type json(jsonSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_get_json_length(json));
-    return rcpp_result_gen;
-END_RCPP
-}
 // rcpp_from_json
-SEXP rcpp_from_json(std::string json);
-RcppExport SEXP _RcppSimdJson_rcpp_from_json(SEXP jsonSEXP) {
+SEXP rcpp_from_json(std::string json, bool simplify, bool fill_na);
+RcppExport SEXP _RcppSimdJson_rcpp_from_json(SEXP jsonSEXP, SEXP simplifySEXP, SEXP fill_naSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type json(jsonSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_from_json(json));
+    Rcpp::traits::input_parameter< bool >::type simplify(simplifySEXP);
+    Rcpp::traits::input_parameter< bool >::type fill_na(fill_naSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_from_json(json, simplify, fill_na));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -69,8 +60,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_RcppSimdJson_rcpp_get_json_length", (DL_FUNC) &_RcppSimdJson_rcpp_get_json_length, 1},
-    {"_RcppSimdJson_rcpp_from_json", (DL_FUNC) &_RcppSimdJson_rcpp_from_json, 1},
+    {"_RcppSimdJson_rcpp_from_json", (DL_FUNC) &_RcppSimdJson_rcpp_from_json, 3},
     {"_RcppSimdJson_validateJSON", (DL_FUNC) &_RcppSimdJson_validateJSON, 1},
     {"_RcppSimdJson_parseExample", (DL_FUNC) &_RcppSimdJson_parseExample, 0},
     {"_RcppSimdJson_cppVersion", (DL_FUNC) &_RcppSimdJson_cppVersion, 0},

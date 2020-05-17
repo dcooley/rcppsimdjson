@@ -1,12 +1,46 @@
-/* auto-generated on Thu  2 Apr 2020 18:58:25 EDT. Do not edit! */
+/* auto-generated on Tue May  5 20:03:59 EDT 2020. Do not edit! */
+/* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
-/* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
-#ifdef DMALLOC
-#include "dmalloc.h"
-#endif
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 
-/* begin file src/simdjson.cpp */
+/* begin file src/error.cpp */
+
+namespace simdjson {
+namespace internal {
+
+  SIMDJSON_DLLIMPORTEXPORT const error_code_info error_codes[] {
+    { SUCCESS, "No error" },
+    { SUCCESS_AND_HAS_MORE, "No error and buffer still has more data" },
+    { CAPACITY, "This parser can't support a document that big" },
+    { MEMALLOC, "Error allocating memory, we're most likely out of memory" },
+    { TAPE_ERROR, "The JSON document has an improper structure: missing or superfluous commas, braces, missing keys, etc." },
+    { DEPTH_ERROR, "The JSON document was too deep (too many nested objects and arrays)" },
+    { STRING_ERROR, "Problem while parsing a string" },
+    { T_ATOM_ERROR, "Problem while parsing an atom starting with the letter 't'" },
+    { F_ATOM_ERROR, "Problem while parsing an atom starting with the letter 'f'" },
+    { N_ATOM_ERROR, "Problem while parsing an atom starting with the letter 'n'" },
+    { NUMBER_ERROR, "Problem while parsing a number" },
+    { UTF8_ERROR, "The input is not valid UTF-8" },
+    { UNINITIALIZED, "Uninitialized" },
+    { EMPTY, "Empty: no JSON found" },
+    { UNESCAPED_CHARS, "Within strings, some characters must be escaped, we found unescaped characters" },
+    { UNCLOSED_STRING, "A string is opened, but never closed." },
+    { UNSUPPORTED_ARCHITECTURE, "simdjson does not have an implementation supported by this CPU architecture (perhaps it's a non-SIMD CPU?)." },
+    { INCORRECT_TYPE, "The JSON element does not have the requested type." },
+    { NUMBER_OUT_OF_RANGE, "The JSON number is too large or too small to fit within the requested type." },
+    { INDEX_OUT_OF_BOUNDS, "Attempted to access an element of a JSON array that is beyond its length." },
+    { NO_SUCH_FIELD, "The JSON field referenced does not exist in this object." },
+    { IO_ERROR, "Error reading the file." },
+    { INVALID_JSON_POINTER, "Invalid JSON pointer syntax." },
+    { INVALID_URI_FRAGMENT, "Invalid URI fragment syntax." },
+    { UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as you may have found a bug in simdjson" }
+  }; // error_messages[]
+
+} // namespace internal
+} // namespace simdjson
+/* end file src/error.cpp */
 /* begin file src/implementation.cpp */
 /* begin file src/isadetection.h */
 /* From
@@ -67,12 +101,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 namespace simdjson {
 
-// Can be found on Intel ISA Reference for CPUID
-constexpr uint32_t cpuid_avx2_bit = 1 << 5;      ///< @private Bit 5 of EBX for EAX=0x7
-constexpr uint32_t cpuid_bmi1_bit = 1 << 3;      ///< @private bit 3 of EBX for EAX=0x7
-constexpr uint32_t cpuid_bmi2_bit = 1 << 8;      ///< @private bit 8 of EBX for EAX=0x7
-constexpr uint32_t cpuid_sse42_bit = 1 << 20;    ///< @private bit 20 of ECX for EAX=0x1
-constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1; ///< @private bit  1 of ECX for EAX=0x1
 
 enum instruction_set {
   DEFAULT = 0x0,
@@ -100,7 +128,20 @@ static inline uint32_t detect_supported_architectures() {
 
 #endif
 
-#else // x86
+#elif defined(__x86_64__) || defined(_M_AMD64) // x64
+
+
+namespace {
+// Can be found on Intel ISA Reference for CPUID
+constexpr uint32_t cpuid_avx2_bit = 1 << 5;      ///< @private Bit 5 of EBX for EAX=0x7
+constexpr uint32_t cpuid_bmi1_bit = 1 << 3;      ///< @private bit 3 of EBX for EAX=0x7
+constexpr uint32_t cpuid_bmi2_bit = 1 << 8;      ///< @private bit 8 of EBX for EAX=0x7
+constexpr uint32_t cpuid_sse42_bit = 1 << 20;    ///< @private bit 20 of ECX for EAX=0x1
+constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1; ///< @private bit  1 of ECX for EAX=0x1
+}
+
+
+
 static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
                          uint32_t *edx) {
 #if defined(_MSC_VER)
@@ -156,10 +197,17 @@ static inline uint32_t detect_supported_architectures() {
 
   return host_isa;
 }
+#else // fallback
+
+
+static inline uint32_t detect_supported_architectures() {
+  return instruction_set::DEFAULT;
+}
+
 
 #endif // end SIMD extension detection code
 
-} // namespace simdjson::internal
+} // namespace simdjson
 
 #endif // SIMDJSON_ISADETECTION_H
 /* end file src/isadetection.h */
@@ -308,7 +356,8 @@ static const uint64_t thintable_epi8[256] = {
 
 /* isadetection.h already included: #include "isadetection.h" */
 
-namespace simdjson::haswell {
+namespace simdjson {
+namespace haswell {
 
 using namespace simdjson::dom;
 
@@ -326,11 +375,12 @@ public:
   WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, parser &parser, size_t &next_json) const noexcept final;
 };
 
-} // namespace simdjson::haswell
+} // namespace haswell
+} // namespace simdjson
 
 #endif // SIMDJSON_HASWELL_IMPLEMENTATION_H
 /* end file src/haswell/implementation.h */
-namespace simdjson::internal { const haswell::implementation haswell_singleton{}; }
+namespace simdjson { namespace internal { const haswell::implementation haswell_singleton{}; } }
 #endif // SIMDJSON_IMPLEMENTATION_HASWELL
 
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
@@ -340,7 +390,8 @@ namespace simdjson::internal { const haswell::implementation haswell_singleton{}
 
 /* isadetection.h already included: #include "isadetection.h" */
 
-namespace simdjson::westmere {
+namespace simdjson {
+namespace westmere {
 
 using namespace simdjson::dom;
 
@@ -354,11 +405,12 @@ public:
   WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, parser &parser, size_t &next_json) const noexcept final;
 };
 
-} // namespace simdjson::westmere
+} // namespace westmere
+} // namespace simdjson
 
 #endif // SIMDJSON_WESTMERE_IMPLEMENTATION_H
 /* end file src/westmere/implementation.h */
-namespace simdjson::internal { const westmere::implementation westmere_singleton{}; }
+namespace simdjson { namespace internal { const westmere::implementation westmere_singleton{}; } }
 #endif // SIMDJSON_IMPLEMENTATION_WESTMERE
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
@@ -368,7 +420,8 @@ namespace simdjson::internal { const westmere::implementation westmere_singleton
 
 /* isadetection.h already included: #include "isadetection.h" */
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
 using namespace simdjson::dom;
 
@@ -382,11 +435,12 @@ public:
   WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, parser &parser, size_t &next_json) const noexcept final;
 };
 
-} // namespace simdjson::arm64
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_IMPLEMENTATION_H
 /* end file src/arm64/implementation.h */
-namespace simdjson::internal { const arm64::implementation arm64_singleton{}; }
+namespace simdjson { namespace internal { const arm64::implementation arm64_singleton{}; } }
 #endif // SIMDJSON_IMPLEMENTATION_ARM64
 
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
@@ -396,7 +450,8 @@ namespace simdjson::internal { const arm64::implementation arm64_singleton{}; }
 
 /* isadetection.h already included: #include "isadetection.h" */
 
-namespace simdjson::fallback {
+namespace simdjson {
+namespace fallback {
 
 using namespace simdjson::dom;
 
@@ -414,16 +469,52 @@ public:
   WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, parser &parser, size_t &next_json) const noexcept final;
 };
 
-} // namespace simdjson::fallback
+} // namespace fallback
+
+} // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_IMPLEMENTATION_H
 /* end file src/fallback/implementation.h */
-namespace simdjson::internal { const fallback::implementation fallback_singleton{}; }
+namespace simdjson { namespace internal { const fallback::implementation fallback_singleton{}; } }
 #endif // SIMDJSON_IMPLEMENTATION_FALLBACK
 
-namespace simdjson::internal {
+namespace simdjson {
+namespace internal {
 
-constexpr const std::initializer_list<const implementation *> available_implementation_pointers {
+/**
+ * @private Detects best supported implementation on first use, and sets it
+ */
+class detect_best_supported_implementation_on_first_use final : public implementation {
+public:
+  const std::string &name() const noexcept final { return set_best()->name(); }
+  const std::string &description() const noexcept final { return set_best()->description(); }
+  uint32_t required_instruction_sets() const noexcept final { return set_best()->required_instruction_sets(); }
+  WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, dom::parser &parser) const noexcept final {
+    return set_best()->parse(buf, len, parser);
+  }
+  WARN_UNUSED error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final {
+    return set_best()->minify(buf, len, dst, dst_len);
+  }
+  WARN_UNUSED error_code stage1(const uint8_t *buf, size_t len, dom::parser &parser, bool streaming) const noexcept final {
+    return set_best()->stage1(buf, len, parser, streaming);
+  }
+  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser) const noexcept final {
+    return set_best()->stage2(buf, len, parser);
+  }
+  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser, size_t &next_json) const noexcept final {
+    return set_best()->stage2(buf, len, parser, next_json);
+  }
+
+  really_inline detect_best_supported_implementation_on_first_use() noexcept : implementation("best_supported_detector", "Detects the best supported implementation and sets it", 0) {}
+private:
+  const implementation *set_best() const noexcept;
+};
+
+const detect_best_supported_implementation_on_first_use detect_best_supported_implementation_on_first_use_singleton;
+
+internal::atomic_ptr<const implementation> active_implementation{&internal::detect_best_supported_implementation_on_first_use_singleton};
+
+const std::initializer_list<const implementation *> available_implementation_pointers {
 #if SIMDJSON_IMPLEMENTATION_HASWELL
   &haswell_singleton,
 #endif
@@ -482,10 +573,28 @@ const implementation *available_implementation_list::detect_best_supported() con
 }
 
 const implementation *detect_best_supported_implementation_on_first_use::set_best() const noexcept {
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
+  char *force_implementation_name = getenv("SIMDJSON_FORCE_IMPLEMENTATION");
+  SIMDJSON_POP_DISABLE_WARNINGS
+
+  if (force_implementation_name) {
+    auto force_implementation = available_implementations[force_implementation_name];
+    if (!force_implementation) {
+      fprintf(stderr, "SIMDJSON_FORCE_IMPLEMENTATION environment variable set to '%s', which is not a supported implementation name!\n", force_implementation_name);
+      abort();
+    }
+    return active_implementation = force_implementation;
+  }
   return active_implementation = available_implementations.detect_best_supported();
 }
 
-} // namespace simdjson::internal
+} // namespace internal
+
+SIMDJSON_DLLIMPORTEXPORT const internal::available_implementation_list available_implementations{};
+SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation> active_implementation{&internal::detect_best_supported_implementation_on_first_use_singleton};
+
+} // namespace simdjson
 /* end file src/fallback/implementation.h */
 /* begin file src/stage1_find_marks.cpp */
 #if SIMDJSON_IMPLEMENTATION_ARM64
@@ -510,7 +619,8 @@ const implementation *detect_best_supported_implementation_on_first_use::set_bes
 #endif //  SIMDJSON_ARM64_INTRINSICS_H
 /* end file src/arm64/intrinsics.h */
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
 //
 // Perform a "cumulative bitwise xor," flipping bits each time a 1 is encountered.
@@ -540,7 +650,8 @@ really_inline uint64_t prefix_xor(uint64_t bitmask) {
   return bitmask;
 }
 
-} // namespace simdjson::arm64
+} // namespace arm64
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif
@@ -556,28 +667,24 @@ UNTARGET_REGION
 
 /* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
-#ifndef _MSC_VER
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
-// Sadly, sanitizers are not smart enough to figure it out. 
-__attribute__((no_sanitize("undefined"))) // this is deliberate
-#endif // _MSC_VER
-/* result might be undefined when input_num is zero */
+// Sadly, sanitizers are not smart enough to figure it out.
+NO_SANITIZE_UNDEFINED
 really_inline int trailing_zeroes(uint64_t input_num) {
-
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
   // Search the mask data from least significant bit (LSB) 
   // to the most significant bit (MSB) for a set bit (1).
   _BitScanForward64(&ret, input_num);
   return (int)ret;
-#else
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO
   return __builtin_ctzll(input_num);
-#endif // _MSC_VER
-
-} // namespace simdjson::arm64
+#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
+}
 
 /* result might be undefined when input_num is zero */
 really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
@@ -586,7 +693,7 @@ really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
 
 /* result might be undefined when input_num is zero */
 really_inline int leading_zeroes(uint64_t input_num) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long leading_zero = 0;
   // Search the mask data from most significant bit (MSB) 
   // to least significant bit (LSB) for a set bit (1).
@@ -596,47 +703,122 @@ really_inline int leading_zeroes(uint64_t input_num) {
     return 64;
 #else
   return __builtin_clzll(input_num);
-#endif// _MSC_VER
+#endif// SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 
 /* result might be undefined when input_num is zero */
 really_inline int count_ones(uint64_t input_num) {
-   return vaddv_u8(vcnt_u8((uint8x8_t)input_num));
+   return vaddv_u8(vcnt_u8(vcreate_u8(input_num)));
 }
 
 really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-#ifdef _MSC_VER
-  // todo: this might fail under visual studio for ARM
-  return _addcarry_u64(0, value1, value2,
-                       reinterpret_cast<unsigned __int64 *>(result));
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+  *result = value1 + value2;
+  return *result < value1;
 #else
   return __builtin_uaddll_overflow(value1, value2,
                                    (unsigned long long *)result);
 #endif
 }
 
-#ifdef _MSC_VER
-#pragma intrinsic(_umul128) // todo: this might fail under visual studio for ARM
-#endif
-
 really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-#ifdef _MSC_VER
-  // todo: this might fail under visual studio for ARM
-  uint64_t high;
-  *result = _umul128(value1, value2, &high);
-  return high;
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+  *result = value1 * value2;
+  return !!__umulh(value1, value2);
 #else
   return __builtin_umulll_overflow(value1, value2, (unsigned long long *)result);
 #endif
 }
 
-} // namespace simdjson::arm64
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_BITMANIPULATION_H
 /* end file src/arm64/bitmanipulation.h */
 /* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
+#include <type_traits>
 
-namespace simdjson::arm64::simd {
+
+namespace simdjson {
+namespace arm64 {
+namespace simd {
+
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+namespace {
+/**
+ * make_uint8x16_t initializes a SIMD register (uint8x16_t).
+ * This is needed because, incredibly, the syntax uint8x16_t x = {1,2,3...}
+ * is not recognized under Visual Studio! This is a workaround.
+ * Using a std::initializer_list<uint8_t>  as a parameter resulted in
+ * inefficient code. With the current approach, if the parameters are
+ * compile-time constants,
+ * GNU GCC compiles it to ldr, the same as uint8x16_t x = {1,2,3...}.
+ * You should not use this function except for compile-time constant:
+ * it is not efficient.
+ */
+really_inline uint8x16_t make_uint8x16_t(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4,
+                           uint8_t x5, uint8_t x6, uint8_t x7, uint8_t x8,
+                           uint8_t x9, uint8_t x10, uint8_t x11, uint8_t x12,
+                           uint8_t x13, uint8_t x14, uint8_t x15, uint8_t x16) {
+  // Doing a load like so end ups generating worse code.
+  // uint8_t array[16] = {x1, x2, x3, x4, x5, x6, x7, x8,
+  //                     x9, x10,x11,x12,x13,x14,x15,x16};
+  // return vld1q_u8(array);
+  uint8x16_t x{};
+  // incredibly, Visual Studio does not allow x[0] = x1
+  x = vsetq_lane_u8(x1, x, 0);
+  x = vsetq_lane_u8(x2, x, 1);
+  x = vsetq_lane_u8(x3, x, 2);
+  x = vsetq_lane_u8(x4, x, 3);
+  x = vsetq_lane_u8(x5, x, 4);
+  x = vsetq_lane_u8(x6, x, 5);
+  x = vsetq_lane_u8(x7, x, 6);
+  x = vsetq_lane_u8(x8, x, 7);
+  x = vsetq_lane_u8(x9, x, 8);
+  x = vsetq_lane_u8(x10, x, 9);
+  x = vsetq_lane_u8(x11, x, 10);
+  x = vsetq_lane_u8(x12, x, 11);
+  x = vsetq_lane_u8(x13, x, 12);
+  x = vsetq_lane_u8(x14, x, 13);
+  x = vsetq_lane_u8(x15, x, 14);
+  x = vsetq_lane_u8(x16, x, 15);
+  return x;
+}
+
+
+// We have to do the same work for make_int8x16_t
+really_inline int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x4,
+                           int8_t x5, int8_t x6, int8_t x7, int8_t x8,
+                           int8_t x9, int8_t x10, int8_t x11, int8_t x12,
+                           int8_t x13, int8_t x14, int8_t x15, int8_t x16) {
+  // Doing a load like so end ups generating worse code.
+  // int8_t array[16] = {x1, x2, x3, x4, x5, x6, x7, x8,
+  //                     x9, x10,x11,x12,x13,x14,x15,x16};
+  // return vld1q_s8(array);
+  int8x16_t x{};
+  // incredibly, Visual Studio does not allow x[0] = x1
+  x = vsetq_lane_s8(x1, x, 0);
+  x = vsetq_lane_s8(x2, x, 1);
+  x = vsetq_lane_s8(x3, x, 2);
+  x = vsetq_lane_s8(x4, x, 3);
+  x = vsetq_lane_s8(x5, x, 4);
+  x = vsetq_lane_s8(x6, x, 5);
+  x = vsetq_lane_s8(x7, x, 6);
+  x = vsetq_lane_s8(x8, x, 7);
+  x = vsetq_lane_s8(x9, x, 8);
+  x = vsetq_lane_s8(x10, x, 9);
+  x = vsetq_lane_s8(x11, x, 10);
+  x = vsetq_lane_s8(x12, x, 11);
+  x = vsetq_lane_s8(x13, x, 12);
+  x = vsetq_lane_s8(x14, x, 13);
+  x = vsetq_lane_s8(x15, x, 14);
+  x = vsetq_lane_s8(x16, x, 15);
+  return x;
+}
+
+} // namespace
+#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
+
 
   template<typename T>
   struct simd8;
@@ -678,7 +860,7 @@ namespace simdjson::arm64::simd {
     typedef uint16_t bitmask_t;
     typedef uint32_t bitmask2_t;
 
-    static really_inline simd8<bool> splat(bool _value) { return vmovq_n_u8(-(!!_value)); }
+    static really_inline simd8<bool> splat(bool _value) { return vmovq_n_u8(uint8_t(-(!!_value))); }
 
     really_inline simd8(const uint8x16_t _value) : base_u8<bool>(_value) {}
     // False constructor
@@ -689,8 +871,13 @@ namespace simdjson::arm64::simd {
     // We return uint32_t instead of uint16_t because that seems to be more efficient for most
     // purposes (cutting it down to uint16_t costs performance in some compilers).
     really_inline uint32_t to_bitmask() const {
-      const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+      const uint8x16_t bit_mask =  make_uint8x16_t(0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+                                   0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80);
+#else
+      const uint8x16_t bit_mask =  {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
                                    0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+#endif
       auto minput = *this & bit_mask;
       uint8x16_t tmp = vpaddq_u8(minput, minput);
       tmp = vpaddq_u8(tmp, tmp);
@@ -715,6 +902,15 @@ namespace simdjson::arm64::simd {
     // Splat constructor
     really_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
     // Member-by-member initialization
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+    really_inline simd8(
+      uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
+      uint8_t v8,  uint8_t v9,  uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15
+    ) : simd8(make_uint8x16_t(
+      v0, v1, v2, v3, v4, v5, v6, v7,
+      v8, v9, v10,v11,v12,v13,v14,v15
+    )) {}
+#else
     really_inline simd8(
       uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
       uint8_t v8,  uint8_t v9,  uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15
@@ -722,6 +918,8 @@ namespace simdjson::arm64::simd {
       v0, v1, v2, v3, v4, v5, v6, v7,
       v8, v9, v10,v11,v12,v13,v14,v15
     }) {}
+#endif
+
     // Repeat 16 values as many times as necessary (usually for lookup tables)
     really_inline static simd8<uint8_t> repeat_16(
       uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
@@ -787,15 +985,19 @@ namespace simdjson::arm64::simd {
     really_inline void compress(uint16_t mask, L * output) const {
       // this particular implementation was inspired by work done by @animetosho
       // we do it in two steps, first 8 bytes and then second 8 bytes
-      uint8_t mask1 = static_cast<uint8_t>(mask); // least significant 8 bits
-      uint8_t mask2 = static_cast<uint8_t>(mask >> 8); // most significant 8 bits
+      uint8_t mask1 = uint8_t(mask); // least significant 8 bits
+      uint8_t mask2 = uint8_t(mask >> 8); // most significant 8 bits
       // next line just loads the 64-bit values thintable_epi8[mask1] and
       // thintable_epi8[mask2] into a 128-bit register, using only
       // two instructions on most compilers.
       uint64x2_t shufmask64 = {thintable_epi8[mask1], thintable_epi8[mask2]};
       uint8x16_t shufmask = vreinterpretq_u8_u64(shufmask64);
       // we increment by 0x08 the second half of the mask
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+      uint8x16_t inc = make_uint8x16_t(0, 0, 0, 0, 0, 0, 0, 0, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08);
+#else
       uint8x16_t inc = {0, 0, 0, 0, 0, 0, 0, 0, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08};
+#endif
       shufmask = vaddq_u8(shufmask, inc);
       // this is the version "nearly pruned"
       uint8x16_t pruned = vqtbl1q_u8(*this, shufmask);
@@ -852,6 +1054,15 @@ namespace simdjson::arm64::simd {
     // Array constructor
     really_inline simd8(const int8_t* values) : simd8(load(values)) {}
     // Member-by-member initialization
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+    really_inline simd8(
+      int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3, int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
+      int8_t v8,  int8_t v9,  int8_t v10, int8_t v11, int8_t v12, int8_t v13, int8_t v14, int8_t v15
+    ) : simd8(make_int8x16_t(
+      v0, v1, v2, v3, v4, v5, v6, v7,
+      v8, v9, v10,v11,v12,v13,v14,v15
+    )) {}
+#else
     really_inline simd8(
       int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3, int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
       int8_t v8,  int8_t v9,  int8_t v10, int8_t v11, int8_t v12, int8_t v13, int8_t v14, int8_t v15
@@ -859,6 +1070,7 @@ namespace simdjson::arm64::simd {
       v0, v1, v2, v3, v4, v5, v6, v7,
       v8, v9, v10,v11,v12,v13,v14,v15
     }) {}
+#endif
     // Repeat 16 values as many times as necessary (usually for lookup tables)
     really_inline static simd8<int8_t> repeat_16(
       int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3,  int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
@@ -874,8 +1086,14 @@ namespace simdjson::arm64::simd {
     really_inline void store(int8_t dst[16]) const { return vst1q_s8(dst, *this); }
 
     // Explicit conversion to/from unsigned
+    //
+    // Under Visual Studio/ARM64 uint8x16_t and int8x16_t are apparently the same type.
+    // In theory, we could check this occurence with std::same_as and std::enabled_if but it is C++14
+    // and relatively ugly and hard to read.
+#ifndef SIMDJSON_REGULAR_VISUAL_STUDIO
     really_inline explicit simd8(const uint8x16_t other): simd8(vreinterpretq_s8_u8(other)) {}
-    really_inline explicit operator simd8<uint8_t>() const { return vreinterpretq_u8_s8(*this); }
+#endif
+    really_inline explicit operator simd8<uint8_t>() const { return vreinterpretq_u8_s8(this->value); }
 
     // Math
     really_inline simd8<int8_t> operator+(const simd8<int8_t> other) const { return vaddq_s8(*this, other); }
@@ -937,10 +1155,10 @@ namespace simdjson::arm64::simd {
     }
 
     really_inline void compress(uint64_t mask, T * output) const {
-      this->chunks[0].compress(mask, output);
-      this->chunks[1].compress(mask >> 16, output + 16 - count_ones(mask & 0xFFFF));
-      this->chunks[2].compress(mask >> 32, output + 32 - count_ones(mask & 0xFFFFFFFF));
-      this->chunks[3].compress(mask >> 48, output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
+      this->chunks[0].compress(uint16_t(mask), output);
+      this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - count_ones(mask & 0xFFFF));
+      this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - count_ones(mask & 0xFFFFFFFF));
+      this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
     }
 
     template <typename F>
@@ -989,10 +1207,17 @@ namespace simdjson::arm64::simd {
     }
 
     really_inline uint64_t to_bitmask() const {
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+      const uint8x16_t bit_mask = make_uint8x16_t(
+        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80
+      );
+#else
       const uint8x16_t bit_mask = {
         0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
         0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80
       };
+#endif
       // Add each of the elements next to each other, successively, to stuff each 8 byte mask into one.
       uint8x16_t sum0 = vpaddq_u8(this->chunks[0] & bit_mask, this->chunks[1] & bit_mask);
       uint8x16_t sum1 = vpaddq_u8(this->chunks[2] & bit_mask, this->chunks[3] & bit_mask);
@@ -1003,28 +1228,31 @@ namespace simdjson::arm64::simd {
 
     really_inline simd8x64<T> bit_or(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a | mask; } );
+      return this->map( [&](simd8<T> a) { return a | mask; } );
     }
 
     really_inline uint64_t eq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a == mask; } ).to_bitmask();
+      return this->map( [&](simd8<T> a) { return a == mask; } ).to_bitmask();
     }
 
     really_inline uint64_t lteq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a <= mask; } ).to_bitmask();
+      return this->map( [&](simd8<T> a) { return a <= mask; } ).to_bitmask();
     }
   }; // struct simd8x64<T>
 
-} // namespace simdjson::arm64::simd
+} // namespace simd
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_SIMD_H
 /* end file src/arm64/bitmanipulation.h */
 /* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
 /* arm64/implementation.h already included: #include "arm64/implementation.h" */
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
 using namespace simd;
 
@@ -1071,7 +1299,7 @@ really_inline json_character_block json_character_block::classify(const simd::si
 }
 
 really_inline bool is_ascii(simd8x64<uint8_t> input) {
-    simd8<uint8_t> bits = input.reduce([&](auto a,auto b) { return a|b; });
+    simd8<uint8_t> bits = input.reduce([&](simd8<uint8_t> a,simd8<uint8_t> b) { return a|b; });
     return bits.max() < 0b10000000u;
 }
 
@@ -1247,7 +1475,7 @@ really_inline json_string_block json_string_scanner::next(const simd::simd8x64<u
   const uint64_t in_string = prefix_xor(quote) ^ prev_in_string;
   // right shift of a signed value expected to be well-defined and standard
   // compliant as of C++20, John Regher from Utah U. says this is fine code
-  prev_in_string = static_cast<uint64_t>(static_cast<int64_t>(in_string) >> 63);
+  prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
   // Use ^ to turn the beginning quote off, and the end quote on.
   return {
     backslash,
@@ -1317,6 +1545,7 @@ private:
  */
 class json_scanner {
 public:
+  json_scanner() {}
   really_inline json_block next(const simd::simd8x64<uint8_t> in);
   really_inline error_code finish(bool streaming);
 
@@ -1324,7 +1553,7 @@ private:
   // Whether the last character of the previous iteration is part of a scalar token
   // (anything except whitespace or an operator).
   uint64_t prev_scalar = 0ULL;
-  json_string_scanner string_scanner;
+  json_string_scanner string_scanner{};
 };
 
 
@@ -1343,7 +1572,7 @@ really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
 
 //
 // Check if the current character follows a matching character, with possible "filler" between.
-// For example, this checks for empty curly braces, e.g. 
+// For example, this checks for empty curly braces, e.g.
 //
 //     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
 //
@@ -1386,12 +1615,14 @@ public:
   static error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) noexcept;
 
 private:
-  really_inline json_minifier(uint8_t *_dst) : dst{_dst} {}
+  really_inline json_minifier(uint8_t *_dst)
+  : dst{_dst}
+  {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
   really_inline void next(simd::simd8x64<uint8_t> in, json_block block);
   really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
-  json_scanner scanner;
+  json_scanner scanner{};
   uint8_t *dst;
 };
 
@@ -1903,7 +2134,7 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-    uint32_t cnt = count_ones(bits);
+    int cnt = static_cast<int>(count_ones(bits));
 
     // Do the first 8 all together
     for (int i=0; i<8; i++) {
@@ -1923,7 +2154,7 @@ public:
       // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
       // or the start of a value ("abc" true 123) every four characters.
       if (unlikely(cnt > 16)) {
-        uint32_t i = 16;
+        int i = 16;
         do {
           this->tail[i] = idx + trailing_zeroes(bits);
           bits = clear_lowest_bit(bits);
@@ -1942,13 +2173,14 @@ public:
   static error_code index(const uint8_t *buf, size_t len, parser &parser, bool streaming) noexcept;
 
 private:
-  really_inline json_structural_indexer(uint32_t *structural_indexes) : indexer{structural_indexes} {}
+  really_inline json_structural_indexer(uint32_t *structural_indexes)
+  : indexer{structural_indexes} {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   really_inline void next(simd::simd8x64<uint8_t> in, json_block block, size_t idx);
   really_inline error_code finish(parser &parser, size_t idx, size_t len, bool streaming);
 
-  json_scanner scanner;
+  json_scanner scanner{};
   utf8_checker checker{};
   bit_indexer indexer;
   uint64_t prev_structurals = 0;
@@ -1958,14 +2190,14 @@ private:
 really_inline void json_structural_indexer::next(simd::simd8x64<uint8_t> in, json_block block, size_t idx) {
   uint64_t unescaped = in.lteq(0x1F);
   checker.check_next_input(in);
-  indexer.write(idx-64, prev_structurals); // Output *last* iteration's structurals to the parser
+  indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
   prev_structurals = block.structural_start();
   unescaped_chars_error |= block.non_quote_inside_string(unescaped);
 }
 
 really_inline error_code json_structural_indexer::finish(parser &parser, size_t idx, size_t len, bool streaming) {
   // Write out the final iteration's structurals
-  indexer.write(idx-64, prev_structurals);
+  indexer.write(uint32_t(idx-64), prev_structurals);
 
   error_code error = scanner.finish(streaming);
   if (unlikely(error != SUCCESS)) { return error; }
@@ -1974,7 +2206,7 @@ really_inline error_code json_structural_indexer::finish(parser &parser, size_t 
     return UNESCAPED_CHARS;
   }
 
-  parser.n_structural_indexes = indexer.tail - parser.structural_indexes.get();
+  parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
   if (unlikely(parser.n_structural_indexes == 0u)) {
@@ -1986,7 +2218,7 @@ really_inline error_code json_structural_indexer::finish(parser &parser, size_t 
   if (len != parser.structural_indexes[parser.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
      * ending character. */
-    parser.structural_indexes[parser.n_structural_indexes++] = len;
+    parser.structural_indexes[parser.n_structural_indexes++] = uint32_t(len);
   }
   /* make it safe to dereference one beyond this array */
   parser.structural_indexes[parser.n_structural_indexes] = 0;
@@ -2026,7 +2258,7 @@ really_inline void json_structural_indexer::step<64>(const uint8_t *block, buf_b
 //    they can make a lot of progress before they need that information.
 // 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
 //    to finish: utf-8 checks and generating the output from the last iteration.
-// 
+//
 // The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
 // available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
 // workout.
@@ -2059,7 +2291,8 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, pa
   return arm64::stage1::json_structural_indexer::index<64>(buf, len, parser, streaming);
 }
 
-} // namespace simdjson::arm64
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_STAGE1_FIND_MARKS_H
 /* end file src/generic/json_structural_indexer.h */
@@ -2071,7 +2304,9 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, pa
 
 /* fallback/implementation.h already included: #include "fallback/implementation.h" */
 
-namespace simdjson::fallback::stage1 {
+namespace simdjson {
+namespace fallback {
+namespace stage1 {
 
 class structural_scanner {
 public:
@@ -2192,7 +2427,7 @@ really_inline error_code scan() {
   }
   *next_structural_index = len;
   next_structural_index++;
-  doc_parser.n_structural_indexes = next_structural_index - doc_parser.structural_indexes.get();
+  doc_parser.n_structural_indexes = uint32_t(next_structural_index - doc_parser.structural_indexes.get());
   return error;
 }
 
@@ -2206,15 +2441,14 @@ private:
   bool streaming;
 }; // structural_scanner
 
-} // simdjson::fallback::stage1
+} // namespace stage1
 
-namespace simdjson::fallback {
 
 WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept {
   if (unlikely(len > parser.capacity())) {
     return CAPACITY;
   }
-  stage1::structural_scanner scanner(buf, len, parser, streaming);
+  stage1::structural_scanner scanner(buf, uint32_t(len), parser, streaming);
   return scanner.scan();
 }
 
@@ -2267,14 +2501,15 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
     pos += meta[2] | quote;
 
     i += 1;
-    nonescape = (~nonescape) | (meta[1]);
+    nonescape = uint8_t(~nonescape) | (meta[1]);
   }
   dst_len = pos; // we intentionally do not work with a reference
   // for fear of aliasing
   return SUCCESS;
 }
 
-} // namespace simdjson::fallback
+} // namespace fallback
+} // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_STAGE1_FIND_MARKS_H
 /* end file src/fallback/stage1_find_marks.h */
@@ -2295,17 +2530,60 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
 #define SIMDJSON_HASWELL_INTRINSICS_H
 
 
-#ifdef _MSC_VER
-#include <intrin.h> // visual studio
+#ifdef SIMDJSON_VISUAL_STUDIO
+// under clang within visual studio, this will include <x86intrin.h>
+#include <intrin.h>  // visual studio or clang
 #else
 #include <x86intrin.h> // elsewhere
-#endif // _MSC_VER
+#endif // SIMDJSON_VISUAL_STUDIO
+
+#ifdef SIMDJSON_CLANG_VISUAL_STUDIO
+/**
+ * You are not supposed, normally, to include these
+ * headers directly. Instead you should either include intrin.h
+ * or x86intrin.h. However, when compiling with clang
+ * under Windows (i.e., when _MSC_VER is set), these headers
+ * only get included *if* the corresponding features are detected
+ * from macros:
+ * e.g., if __AVX2__ is set... in turn,  we normally set these
+ * macros by compiling against the corresponding architecture
+ * (e.g., arch:AVX2, -mavx2, etc.) which compiles the whole
+ * software with these advanced instructions. In simdjson, we
+ * want to compile the whole program for a generic target,
+ * and only target our specific kernels. As a workaround,
+ * we directly include the needed headers. These headers would
+ * normally guard against such usage, but we carefully included
+ * <x86intrin.h>  (or <intrin.h>) before, so the headers
+ * are fooled.
+ */
+#include <bmiintrin.h>   // for _blsr_u64
+#include <lzcntintrin.h> // for  __lzcnt64
+#include <immintrin.h>   // for most things (AVX2, AVX512, _popcnt64)
+#include <smmintrin.h>
+#include <tmmintrin.h>
+#include <avxintrin.h>
+#include <avx2intrin.h>
+#include <wmmintrin.h>   // for  _mm_clmulepi64_si128
+// unfortunately, we may not get _blsr_u64, but, thankfully, clang
+// has it as a macro.
+#ifndef _blsr_u64
+// we roll our own
+TARGET_HASWELL
+static really_inline uint64_t simdjson_blsr_u64(uint64_t n) {
+  return (n - 1) & n;
+}
+UNTARGET_REGION
+#define _blsr_u64(a)      (simdjson_blsr_u64((a)))
+#endif //  _blsr_u64
+#endif
+
 
 #endif // SIMDJSON_HASWELL_INTRINSICS_H
 /* end file src/haswell/intrinsics.h */
 
 TARGET_HASWELL
-namespace simdjson::haswell {
+namespace simdjson {
+namespace haswell {
 
 //
 // Perform a "cumulative bitwise xor," flipping bits each time a 1 is encountered.
@@ -2320,7 +2598,9 @@ really_inline uint64_t prefix_xor(const uint64_t bitmask) {
   return _mm_cvtsi128_si64(result);
 }
 
-} // namespace simdjson::haswell
+} // namespace haswell
+
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_BITMASK_H
@@ -2338,25 +2618,24 @@ UNTARGET_REGION
 /* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
 
 TARGET_HASWELL
-namespace simdjson::haswell {
+namespace simdjson {
+namespace haswell {
 
-#ifndef _MSC_VER
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
-__attribute__((no_sanitize("undefined")))  // this is deliberate
-#endif
+NO_SANITIZE_UNDEFINED
 really_inline int trailing_zeroes(uint64_t input_num) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   return (int)_tzcnt_u64(input_num);
-#else
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO
   ////////
   // You might expect the next line to be equivalent to 
   // return (int)_tzcnt_u64(input_num);
   // but the generated code differs and might be less efficient?
   ////////
   return __builtin_ctzll(input_num);
-#endif// _MSC_VER
+#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 
 /* result might be undefined when input_num is zero */
@@ -2366,21 +2645,23 @@ really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
 
 /* result might be undefined when input_num is zero */
 really_inline int leading_zeroes(uint64_t input_num) {
-  return static_cast<int>(_lzcnt_u64(input_num));
+  return int(_lzcnt_u64(input_num));
 }
 
-really_inline int count_ones(uint64_t input_num) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+really_inline unsigned __int64 count_ones(uint64_t input_num) {
   // note: we do not support legacy 32-bit Windows
   return __popcnt64(input_num);// Visual Studio wants two underscores
-#else
-  return _popcnt64(input_num);
-#endif
 }
+#else
+really_inline long long int count_ones(uint64_t input_num) {
+  return _popcnt64(input_num);
+}
+#endif
 
 really_inline bool add_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   return _addcarry_u64(0, value1, value2,
                        reinterpret_cast<unsigned __int64 *>(result));
 #else
@@ -2389,12 +2670,12 @@ really_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #endif
 }
 
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
 #pragma intrinsic(_umul128)
 #endif
 really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   uint64_t high;
   *result = _umul128(value1, value2, &high);
   return high;
@@ -2403,7 +2684,9 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
                                    (unsigned long long *)result);
 #endif
 }
-}// namespace simdjson::haswell
+
+} // namespace haswell
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_BITMANIPULATION_H
@@ -2411,7 +2694,9 @@ UNTARGET_REGION
 /* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
 
 TARGET_HASWELL
-namespace simdjson::haswell::simd {
+namespace simdjson {
+namespace haswell {
+namespace simd {
 
   // Forward-declared so they can be used by splat and friends.
   template<typename Child>
@@ -2463,7 +2748,7 @@ namespace simdjson::haswell::simd {
   // SIMD byte mask type (returned by things like eq and gt)
   template<>
   struct simd8<bool>: base8<bool> {
-    static really_inline simd8<bool> splat(bool _value) { return _mm256_set1_epi8(-(!!_value)); }
+    static really_inline simd8<bool> splat(bool _value) { return _mm256_set1_epi8(uint8_t(-(!!_value))); }
 
     really_inline simd8<bool>() : base8() {}
     really_inline simd8<bool>(const __m256i _value) : base8<bool>(_value) {}
@@ -2527,10 +2812,10 @@ namespace simdjson::haswell::simd {
     really_inline void compress(uint32_t mask, L * output) const {
       // this particular implementation was inspired by work done by @animetosho
       // we do it in four steps, first 8 bytes and then second 8 bytes...
-      uint8_t mask1 = static_cast<uint8_t>(mask); // least significant 8 bits
-      uint8_t mask2 = static_cast<uint8_t>(mask >> 8); // second least significant 8 bits
-      uint8_t mask3 = static_cast<uint8_t>(mask >> 16); // ...
-      uint8_t mask4 = static_cast<uint8_t>(mask >> 24); // ...
+      uint8_t mask1 = uint8_t(mask); // least significant 8 bits
+      uint8_t mask2 = uint8_t(mask >> 8); // second least significant 8 bits
+      uint8_t mask3 = uint8_t(mask >> 16); // ...
+      uint8_t mask4 = uint8_t(mask >> 24); // ...
       // next line just loads the 64-bit values thintable_epi8[mask1] and
       // thintable_epi8[mask2] into a 128-bit register, using only
       // two instructions on most compilers.
@@ -2707,8 +2992,8 @@ namespace simdjson::haswell::simd {
     }
 
     really_inline void compress(uint64_t mask, T * output) const {
-      uint32_t mask1 = static_cast<uint32_t>(mask);
-      uint32_t mask2 = static_cast<uint32_t>(mask >> 32);
+      uint32_t mask1 = uint32_t(mask);
+      uint32_t mask2 = uint32_t(mask >> 32);
       this->chunks[0].compress(mask1, output);
       this->chunks[1].compress(mask2, output + 32 - count_ones(mask1));
     }
@@ -2749,28 +3034,31 @@ namespace simdjson::haswell::simd {
     }
 
     really_inline uint64_t to_bitmask() const {
-      uint64_t r_lo = static_cast<uint32_t>(this->chunks[0].to_bitmask());
+      uint64_t r_lo = uint32_t(this->chunks[0].to_bitmask());
       uint64_t r_hi =                       this->chunks[1].to_bitmask();
       return r_lo | (r_hi << 32);
     }
 
     really_inline simd8x64<T> bit_or(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a | mask; } );
+      return this->map( [&](simd8<T> a) { return a | mask; } );
     }
 
     really_inline uint64_t eq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a == mask; } ).to_bitmask();
+      return this->map( [&](simd8<T> a) { return a == mask; } ).to_bitmask();
     }
 
     really_inline uint64_t lteq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a <= mask; } ).to_bitmask();
+      return this->map( [&](simd8<T> a) { return a <= mask; } ).to_bitmask();
     }
   }; // struct simd8x64<T>
 
-} // namespace simdjson::haswell::simd
+} // namespace simd
+
+} // namespace haswell
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_SIMD_H
@@ -2779,7 +3067,8 @@ UNTARGET_REGION
 /* haswell/implementation.h already included: #include "haswell/implementation.h" */
 
 TARGET_HASWELL
-namespace simdjson::haswell {
+namespace simdjson {
+namespace haswell {
 
 using namespace simd;
 
@@ -2817,7 +3106,7 @@ really_inline json_character_block json_character_block::classify(const simd::si
 }
 
 really_inline bool is_ascii(simd8x64<uint8_t> input) {
-  simd8<uint8_t> bits = input.reduce([&](auto a,auto b) { return a|b; });
+  simd8<uint8_t> bits = input.reduce([&](simd8<uint8_t> a,simd8<uint8_t> b) { return a|b; });
   return !bits.any_bits_set_anywhere(0b10000000u);
 }
 
@@ -2989,7 +3278,7 @@ really_inline json_string_block json_string_scanner::next(const simd::simd8x64<u
   const uint64_t in_string = prefix_xor(quote) ^ prev_in_string;
   // right shift of a signed value expected to be well-defined and standard
   // compliant as of C++20, John Regher from Utah U. says this is fine code
-  prev_in_string = static_cast<uint64_t>(static_cast<int64_t>(in_string) >> 63);
+  prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
   // Use ^ to turn the beginning quote off, and the end quote on.
   return {
     backslash,
@@ -3059,6 +3348,7 @@ private:
  */
 class json_scanner {
 public:
+  json_scanner() {}
   really_inline json_block next(const simd::simd8x64<uint8_t> in);
   really_inline error_code finish(bool streaming);
 
@@ -3066,7 +3356,7 @@ private:
   // Whether the last character of the previous iteration is part of a scalar token
   // (anything except whitespace or an operator).
   uint64_t prev_scalar = 0ULL;
-  json_string_scanner string_scanner;
+  json_string_scanner string_scanner{};
 };
 
 
@@ -3085,7 +3375,7 @@ really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
 
 //
 // Check if the current character follows a matching character, with possible "filler" between.
-// For example, this checks for empty curly braces, e.g. 
+// For example, this checks for empty curly braces, e.g.
 //
 //     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
 //
@@ -3128,12 +3418,14 @@ public:
   static error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) noexcept;
 
 private:
-  really_inline json_minifier(uint8_t *_dst) : dst{_dst} {}
+  really_inline json_minifier(uint8_t *_dst)
+  : dst{_dst}
+  {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
   really_inline void next(simd::simd8x64<uint8_t> in, json_block block);
   really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
-  json_scanner scanner;
+  json_scanner scanner{};
   uint8_t *dst;
 };
 
@@ -3645,7 +3937,7 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-    uint32_t cnt = count_ones(bits);
+    int cnt = static_cast<int>(count_ones(bits));
 
     // Do the first 8 all together
     for (int i=0; i<8; i++) {
@@ -3665,7 +3957,7 @@ public:
       // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
       // or the start of a value ("abc" true 123) every four characters.
       if (unlikely(cnt > 16)) {
-        uint32_t i = 16;
+        int i = 16;
         do {
           this->tail[i] = idx + trailing_zeroes(bits);
           bits = clear_lowest_bit(bits);
@@ -3684,13 +3976,14 @@ public:
   static error_code index(const uint8_t *buf, size_t len, parser &parser, bool streaming) noexcept;
 
 private:
-  really_inline json_structural_indexer(uint32_t *structural_indexes) : indexer{structural_indexes} {}
+  really_inline json_structural_indexer(uint32_t *structural_indexes)
+  : indexer{structural_indexes} {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   really_inline void next(simd::simd8x64<uint8_t> in, json_block block, size_t idx);
   really_inline error_code finish(parser &parser, size_t idx, size_t len, bool streaming);
 
-  json_scanner scanner;
+  json_scanner scanner{};
   utf8_checker checker{};
   bit_indexer indexer;
   uint64_t prev_structurals = 0;
@@ -3700,14 +3993,14 @@ private:
 really_inline void json_structural_indexer::next(simd::simd8x64<uint8_t> in, json_block block, size_t idx) {
   uint64_t unescaped = in.lteq(0x1F);
   checker.check_next_input(in);
-  indexer.write(idx-64, prev_structurals); // Output *last* iteration's structurals to the parser
+  indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
   prev_structurals = block.structural_start();
   unescaped_chars_error |= block.non_quote_inside_string(unescaped);
 }
 
 really_inline error_code json_structural_indexer::finish(parser &parser, size_t idx, size_t len, bool streaming) {
   // Write out the final iteration's structurals
-  indexer.write(idx-64, prev_structurals);
+  indexer.write(uint32_t(idx-64), prev_structurals);
 
   error_code error = scanner.finish(streaming);
   if (unlikely(error != SUCCESS)) { return error; }
@@ -3716,7 +4009,7 @@ really_inline error_code json_structural_indexer::finish(parser &parser, size_t 
     return UNESCAPED_CHARS;
   }
 
-  parser.n_structural_indexes = indexer.tail - parser.structural_indexes.get();
+  parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
   if (unlikely(parser.n_structural_indexes == 0u)) {
@@ -3728,7 +4021,7 @@ really_inline error_code json_structural_indexer::finish(parser &parser, size_t 
   if (len != parser.structural_indexes[parser.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
      * ending character. */
-    parser.structural_indexes[parser.n_structural_indexes++] = len;
+    parser.structural_indexes[parser.n_structural_indexes++] = uint32_t(len);
   }
   /* make it safe to dereference one beyond this array */
   parser.structural_indexes[parser.n_structural_indexes] = 0;
@@ -3768,7 +4061,7 @@ really_inline void json_structural_indexer::step<64>(const uint8_t *block, buf_b
 //    they can make a lot of progress before they need that information.
 // 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
 //    to finish: utf-8 checks and generating the output from the last iteration.
-// 
+//
 // The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
 // available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
 // workout.
@@ -3801,7 +4094,9 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, pa
   return haswell::stage1::json_structural_indexer::index<128>(buf, len, parser, streaming);
 }
 
-} // namespace simdjson::haswell
+} // namespace haswell
+
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_STAGE1_FIND_MARKS_H
@@ -3820,17 +4115,35 @@ UNTARGET_REGION
 #ifndef SIMDJSON_WESTMERE_INTRINSICS_H
 #define SIMDJSON_WESTMERE_INTRINSICS_H
 
-#ifdef _MSC_VER
-#include <intrin.h> // visual studio
+#ifdef SIMDJSON_VISUAL_STUDIO
+// under clang within visual studio, this will include <x86intrin.h>
+#include <intrin.h> // visual studio or clang
 #else
 #include <x86intrin.h> // elsewhere
-#endif // _MSC_VER
+#endif // SIMDJSON_VISUAL_STUDIO
+
+
+#ifdef SIMDJSON_CLANG_VISUAL_STUDIO
+/**
+ * You are not supposed, normally, to include these
+ * headers directly. Instead you should either include intrin.h
+ * or x86intrin.h. However, when compiling with clang
+ * under Windows (i.e., when _MSC_VER is set), these headers
+ * only get included *if* the corresponding features are detected
+ * from macros:
+ */
+#include <smmintrin.h>  // for _mm_alignr_epi8
+#include <wmmintrin.h>  // for  _mm_clmulepi64_si128
+#endif
+
+
 
 #endif // SIMDJSON_WESTMERE_INTRINSICS_H
 /* end file src/westmere/intrinsics.h */
 
 TARGET_WESTMERE
-namespace simdjson::westmere {
+namespace simdjson {
+namespace westmere {
 
 //
 // Perform a "cumulative bitwise xor," flipping bits each time a 1 is encountered.
@@ -3845,7 +4158,9 @@ really_inline uint64_t prefix_xor(const uint64_t bitmask) {
   return _mm_cvtsi128_si64(result);
 }
 
-} // namespace simdjson::westmere
+} // namespace westmere
+
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_BITMASK_H
@@ -3862,25 +4177,23 @@ UNTARGET_REGION
 /* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
 
 TARGET_WESTMERE
-namespace simdjson::westmere {
+namespace simdjson {
+namespace westmere {
 
-#ifndef _MSC_VER
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
-__attribute__((no_sanitize("undefined")))  // this is deliberate
-#endif
-/* result might be undefined when input_num is zero */
+NO_SANITIZE_UNDEFINED
 really_inline int trailing_zeroes(uint64_t input_num) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
   // Search the mask data from least significant bit (LSB) 
   // to the most significant bit (MSB) for a set bit (1).
   _BitScanForward64(&ret, input_num);
   return (int)ret;
-#else
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO
   return __builtin_ctzll(input_num);
-#endif// _MSC_VER
+#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 
 /* result might be undefined when input_num is zero */
@@ -3890,7 +4203,7 @@ really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
 
 /* result might be undefined when input_num is zero */
 really_inline int leading_zeroes(uint64_t input_num) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long leading_zero = 0;
   // Search the mask data from most significant bit (MSB) 
   // to least significant bit (LSB) for a set bit (1).
@@ -3900,21 +4213,23 @@ really_inline int leading_zeroes(uint64_t input_num) {
     return 64;
 #else
   return __builtin_clzll(input_num);
-#endif// _MSC_VER
+#endif// SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 
-really_inline int count_ones(uint64_t input_num) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+really_inline unsigned __int64 count_ones(uint64_t input_num) {
   // note: we do not support legacy 32-bit Windows
   return __popcnt64(input_num);// Visual Studio wants two underscores
-#else
-  return _popcnt64(input_num);
-#endif
 }
+#else
+really_inline long long int count_ones(uint64_t input_num) {
+  return _popcnt64(input_num);
+}
+#endif
 
 really_inline bool add_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   return _addcarry_u64(0, value1, value2,
                        reinterpret_cast<unsigned __int64 *>(result));
 #else
@@ -3923,12 +4238,12 @@ really_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #endif
 }
 
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
 #pragma intrinsic(_umul128)
 #endif
 really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   uint64_t high;
   *result = _umul128(value1, value2, &high);
   return high;
@@ -3938,7 +4253,9 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
 #endif
 }
 
-} // namespace simdjson::westmere
+} // namespace westmere
+
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_BITMANIPULATION_H
@@ -3948,7 +4265,9 @@ UNTARGET_REGION
 
 
 TARGET_WESTMERE
-namespace simdjson::westmere::simd {
+namespace simdjson {
+namespace westmere {
+namespace simd {
 
   template<typename Child>
   struct base {
@@ -3999,7 +4318,7 @@ namespace simdjson::westmere::simd {
   // SIMD byte mask type (returned by things like eq and gt)
   template<>
   struct simd8<bool>: base8<bool> {
-    static really_inline simd8<bool> splat(bool _value) { return _mm_set1_epi8(-(!!_value)); }
+    static really_inline simd8<bool> splat(bool _value) { return _mm_set1_epi8(uint8_t(-(!!_value))); }
 
     really_inline simd8<bool>() : base8() {}
     really_inline simd8<bool>(const __m128i _value) : base8<bool>(_value) {}
@@ -4061,8 +4380,8 @@ namespace simdjson::westmere::simd {
     really_inline void compress(uint16_t mask, L * output) const {
       // this particular implementation was inspired by work done by @animetosho
       // we do it in two steps, first 8 bytes and then second 8 bytes
-      uint8_t mask1 = static_cast<uint8_t>(mask); // least significant 8 bits
-      uint8_t mask2 = static_cast<uint8_t>(mask >> 8); // most significant 8 bits
+      uint8_t mask1 = uint8_t(mask); // least significant 8 bits
+      uint8_t mask2 = uint8_t(mask >> 8); // most significant 8 bits
       // next line just loads the 64-bit values thintable_epi8[mask1] and
       // thintable_epi8[mask2] into a 128-bit register, using only
       // two instructions on most compilers.
@@ -4215,10 +4534,10 @@ namespace simdjson::westmere::simd {
     }
 
     really_inline void compress(uint64_t mask, T * output) const {
-      this->chunks[0].compress(mask, output);
-      this->chunks[1].compress(mask >> 16, output + 16 - count_ones(mask & 0xFFFF));
-      this->chunks[2].compress(mask >> 32, output + 32 - count_ones(mask & 0xFFFFFFFF));
-      this->chunks[3].compress(mask >> 48, output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
+      this->chunks[0].compress(uint16_t(mask), output);
+      this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - count_ones(mask & 0xFFFF));
+      this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - count_ones(mask & 0xFFFFFFFF));
+      this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
     }
 
     template <typename F>
@@ -4267,7 +4586,7 @@ namespace simdjson::westmere::simd {
     }
 
     really_inline uint64_t to_bitmask() const {
-      uint64_t r0 = static_cast<uint32_t>(this->chunks[0].to_bitmask());
+      uint64_t r0 = uint32_t(this->chunks[0].to_bitmask());
       uint64_t r1 =                       this->chunks[1].to_bitmask();
       uint64_t r2 =                       this->chunks[2].to_bitmask();
       uint64_t r3 =                       this->chunks[3].to_bitmask();
@@ -4276,21 +4595,24 @@ namespace simdjson::westmere::simd {
 
     really_inline simd8x64<T> bit_or(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a | mask; } );
+      return this->map( [&](simd8<T> a) { return a | mask; } );
     }
 
     really_inline uint64_t eq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a == mask; } ).to_bitmask();
+      return this->map( [&](simd8<T> a) { return a == mask; } ).to_bitmask();
     }
 
     really_inline uint64_t lteq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a <= mask; } ).to_bitmask();
+      return this->map( [&](simd8<T> a) { return a <= mask; } ).to_bitmask();
     }
   }; // struct simd8x64<T>
 
-} // namespace simdjson::westmere::simd
+} // namespace simd
+
+} // namespace westmere
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_SIMD_INPUT_H
@@ -4299,7 +4621,8 @@ UNTARGET_REGION
 /* westmere/implementation.h already included: #include "westmere/implementation.h" */
 
 TARGET_WESTMERE
-namespace simdjson::westmere {
+namespace simdjson {
+namespace westmere {
 
 using namespace simd;
 
@@ -4337,7 +4660,7 @@ really_inline json_character_block json_character_block::classify(const simd::si
 }
 
 really_inline bool is_ascii(simd8x64<uint8_t> input) {
-  simd8<uint8_t> bits = input.reduce([&](auto a,auto b) { return a|b; });
+  simd8<uint8_t> bits = input.reduce([&](simd8<uint8_t> a,simd8<uint8_t> b) { return a|b; });
   return !bits.any_bits_set_anywhere(0b10000000u);
 }
 
@@ -4509,7 +4832,7 @@ really_inline json_string_block json_string_scanner::next(const simd::simd8x64<u
   const uint64_t in_string = prefix_xor(quote) ^ prev_in_string;
   // right shift of a signed value expected to be well-defined and standard
   // compliant as of C++20, John Regher from Utah U. says this is fine code
-  prev_in_string = static_cast<uint64_t>(static_cast<int64_t>(in_string) >> 63);
+  prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
   // Use ^ to turn the beginning quote off, and the end quote on.
   return {
     backslash,
@@ -4579,6 +4902,7 @@ private:
  */
 class json_scanner {
 public:
+  json_scanner() {}
   really_inline json_block next(const simd::simd8x64<uint8_t> in);
   really_inline error_code finish(bool streaming);
 
@@ -4586,7 +4910,7 @@ private:
   // Whether the last character of the previous iteration is part of a scalar token
   // (anything except whitespace or an operator).
   uint64_t prev_scalar = 0ULL;
-  json_string_scanner string_scanner;
+  json_string_scanner string_scanner{};
 };
 
 
@@ -4605,7 +4929,7 @@ really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
 
 //
 // Check if the current character follows a matching character, with possible "filler" between.
-// For example, this checks for empty curly braces, e.g. 
+// For example, this checks for empty curly braces, e.g.
 //
 //     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
 //
@@ -4648,12 +4972,14 @@ public:
   static error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) noexcept;
 
 private:
-  really_inline json_minifier(uint8_t *_dst) : dst{_dst} {}
+  really_inline json_minifier(uint8_t *_dst)
+  : dst{_dst}
+  {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
   really_inline void next(simd::simd8x64<uint8_t> in, json_block block);
   really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
-  json_scanner scanner;
+  json_scanner scanner{};
   uint8_t *dst;
 };
 
@@ -5165,7 +5491,7 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-    uint32_t cnt = count_ones(bits);
+    int cnt = static_cast<int>(count_ones(bits));
 
     // Do the first 8 all together
     for (int i=0; i<8; i++) {
@@ -5185,7 +5511,7 @@ public:
       // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
       // or the start of a value ("abc" true 123) every four characters.
       if (unlikely(cnt > 16)) {
-        uint32_t i = 16;
+        int i = 16;
         do {
           this->tail[i] = idx + trailing_zeroes(bits);
           bits = clear_lowest_bit(bits);
@@ -5204,13 +5530,14 @@ public:
   static error_code index(const uint8_t *buf, size_t len, parser &parser, bool streaming) noexcept;
 
 private:
-  really_inline json_structural_indexer(uint32_t *structural_indexes) : indexer{structural_indexes} {}
+  really_inline json_structural_indexer(uint32_t *structural_indexes)
+  : indexer{structural_indexes} {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   really_inline void next(simd::simd8x64<uint8_t> in, json_block block, size_t idx);
   really_inline error_code finish(parser &parser, size_t idx, size_t len, bool streaming);
 
-  json_scanner scanner;
+  json_scanner scanner{};
   utf8_checker checker{};
   bit_indexer indexer;
   uint64_t prev_structurals = 0;
@@ -5220,14 +5547,14 @@ private:
 really_inline void json_structural_indexer::next(simd::simd8x64<uint8_t> in, json_block block, size_t idx) {
   uint64_t unescaped = in.lteq(0x1F);
   checker.check_next_input(in);
-  indexer.write(idx-64, prev_structurals); // Output *last* iteration's structurals to the parser
+  indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
   prev_structurals = block.structural_start();
   unescaped_chars_error |= block.non_quote_inside_string(unescaped);
 }
 
 really_inline error_code json_structural_indexer::finish(parser &parser, size_t idx, size_t len, bool streaming) {
   // Write out the final iteration's structurals
-  indexer.write(idx-64, prev_structurals);
+  indexer.write(uint32_t(idx-64), prev_structurals);
 
   error_code error = scanner.finish(streaming);
   if (unlikely(error != SUCCESS)) { return error; }
@@ -5236,7 +5563,7 @@ really_inline error_code json_structural_indexer::finish(parser &parser, size_t 
     return UNESCAPED_CHARS;
   }
 
-  parser.n_structural_indexes = indexer.tail - parser.structural_indexes.get();
+  parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
   if (unlikely(parser.n_structural_indexes == 0u)) {
@@ -5248,7 +5575,7 @@ really_inline error_code json_structural_indexer::finish(parser &parser, size_t 
   if (len != parser.structural_indexes[parser.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
      * ending character. */
-    parser.structural_indexes[parser.n_structural_indexes++] = len;
+    parser.structural_indexes[parser.n_structural_indexes++] = uint32_t(len);
   }
   /* make it safe to dereference one beyond this array */
   parser.structural_indexes[parser.n_structural_indexes] = 0;
@@ -5288,7 +5615,7 @@ really_inline void json_structural_indexer::step<64>(const uint8_t *block, buf_b
 //    they can make a lot of progress before they need that information.
 // 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
 //    to finish: utf-8 checks and generating the output from the last iteration.
-// 
+//
 // The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
 // available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
 // workout.
@@ -5321,7 +5648,9 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, pa
   return westmere::stage1::json_structural_indexer::index<64>(buf, len, parser, streaming);
 }
 
-} // namespace simdjson::westmere
+} // namespace westmere
+
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_STAGE1_FIND_MARKS_H
@@ -5588,17 +5917,6 @@ static inline uint32_t hex_to_u32_nocheck(
   return v1 | v2 | v3 | v4;
 }
 
-// returns true if the provided byte value is a 
-// "continuing" UTF-8 value, that is, if it starts with
-// 0b10...
-static inline bool is_utf8_continuing(char c) {
-  // in 2 complement's notation, values start at 0b10000 (-128)... and
-  // go up to 0b11111 (-1)... so we want all values from -128 to -65 (which is 0b10111111)
-  return ((signed char)c) <= -65;
-}
-
-
-
 // given a code point cp, writes to c
 // the utf-8 code, outputting the length in
 // bytes, if the length is zero, the code point
@@ -5613,41 +5931,39 @@ static inline bool is_utf8_continuing(char c) {
 //
 inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   if (cp <= 0x7F) {
-    c[0] = cp;
+    c[0] = uint8_t(cp);
     return 1; // ascii
   }
   if (cp <= 0x7FF) {
-    c[0] = (cp >> 6) + 192;
-    c[1] = (cp & 63) + 128;
+    c[0] = uint8_t((cp >> 6) + 192);
+    c[1] = uint8_t((cp & 63) + 128);
     return 2; // universal plane
     //  Surrogates are treated elsewhere...
     //} //else if (0xd800 <= cp && cp <= 0xdfff) {
     //  return 0; // surrogates // could put assert here
   } else if (cp <= 0xFFFF) {
-    c[0] = (cp >> 12) + 224;
-    c[1] = ((cp >> 6) & 63) + 128;
-    c[2] = (cp & 63) + 128;
+    c[0] = uint8_t((cp >> 12) + 224);
+    c[1] = uint8_t(((cp >> 6) & 63) + 128);
+    c[2] = uint8_t((cp & 63) + 128);
     return 3;
   } else if (cp <= 0x10FFFF) { // if you know you have a valid code point, this
                                // is not needed
-    c[0] = (cp >> 18) + 240;
-    c[1] = ((cp >> 12) & 63) + 128;
-    c[2] = ((cp >> 6) & 63) + 128;
-    c[3] = (cp & 63) + 128;
+    c[0] = uint8_t((cp >> 18) + 240);
+    c[1] = uint8_t(((cp >> 12) & 63) + 128);
+    c[2] = uint8_t(((cp >> 6) & 63) + 128);
+    c[3] = uint8_t((cp & 63) + 128);
     return 4;
   }
   // will return 0 when the code point was too large.
   return 0; // bad r
 }
 
-
 ////
 // The following code is used in number parsing. It is not
 // properly "char utils" stuff, but we move it here so that
 // it does not get copied multiple times in the binaries (once
-// per instructin set).
+// per instruction set).
 ///
-
 
 constexpr int FASTFLOAT_SMALLEST_POWER = -325;
 constexpr int FASTFLOAT_LARGEST_POWER = 308;
@@ -5657,15 +5973,39 @@ struct value128 {
   uint64_t high;
 };
 
+#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) &&                                 \
+    !defined(_M_X64) && !defined(_M_ARM64)// _umul128 for x86, arm
+// this is a slow emulation routine for 32-bit Windows
+//
+static inline uint64_t __emulu(uint32_t x, uint32_t y) {
+  return x * (uint64_t)y;
+}
+static inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi) {
+  uint64_t ad = __emulu((uint32_t)(ab >> 32), (uint32_t)cd);
+  uint64_t bd = __emulu((uint32_t)ab, (uint32_t)cd);
+  uint64_t adbc = ad + __emulu((uint32_t)ab, (uint32_t)(cd >> 32));
+  uint64_t adbc_carry = !!(adbc < ad);
+  uint64_t lo = bd + (adbc << 32);
+  *hi = __emulu((uint32_t)(ab >> 32), (uint32_t)(cd >> 32)) + (adbc >> 32) +
+        (adbc_carry << 32) + !!(lo < bd);
+  return lo;
+}
+#endif
+
 really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   value128 answer;
-#ifdef _MSC_VER
-  // todo: this might fail under visual studio for ARM
-  answer.low = _umul128(value1, value2, &answer.high);
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
 #else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO
   __uint128_t r = ((__uint128_t)value1) * value2;
-  answer.low = r;
-  answer.high = r >> 64;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
 #endif
   return answer;
 }
@@ -6011,641 +6351,642 @@ static const components power_of_ten_components[] = {
 
 // A complement from power_of_ten_components
 // complete to a 128-bit mantissa.
-const uint64_t mantissa_128[] = {0x419ea3bd35385e2d,
-                                 0x52064cac828675b9,
-                                 0x7343efebd1940993,
-                                 0x1014ebe6c5f90bf8,
-                                 0xd41a26e077774ef6,
-                                 0x8920b098955522b4,
-                                 0x55b46e5f5d5535b0,
-                                 0xeb2189f734aa831d,
-                                 0xa5e9ec7501d523e4,
-                                 0x47b233c92125366e,
-                                 0x999ec0bb696e840a,
-                                 0xc00670ea43ca250d,
-                                 0x380406926a5e5728,
-                                 0xc605083704f5ecf2,
-                                 0xf7864a44c633682e,
-                                 0x7ab3ee6afbe0211d,
-                                 0x5960ea05bad82964,
-                                 0x6fb92487298e33bd,
-                                 0xa5d3b6d479f8e056,
-                                 0x8f48a4899877186c,
-                                 0x331acdabfe94de87,
-                                 0x9ff0c08b7f1d0b14,
-                                 0x7ecf0ae5ee44dd9,
-                                 0xc9e82cd9f69d6150,
-                                 0xbe311c083a225cd2,
-                                 0x6dbd630a48aaf406,
-                                 0x92cbbccdad5b108,
-                                 0x25bbf56008c58ea5,
-                                 0xaf2af2b80af6f24e,
-                                 0x1af5af660db4aee1,
-                                 0x50d98d9fc890ed4d,
-                                 0xe50ff107bab528a0,
-                                 0x1e53ed49a96272c8,
-                                 0x25e8e89c13bb0f7a,
-                                 0x77b191618c54e9ac,
-                                 0xd59df5b9ef6a2417,
-                                 0x4b0573286b44ad1d,
-                                 0x4ee367f9430aec32,
-                                 0x229c41f793cda73f,
-                                 0x6b43527578c1110f,
-                                 0x830a13896b78aaa9,
-                                 0x23cc986bc656d553,
-                                 0x2cbfbe86b7ec8aa8,
-                                 0x7bf7d71432f3d6a9,
-                                 0xdaf5ccd93fb0cc53,
-                                 0xd1b3400f8f9cff68,
-                                 0x23100809b9c21fa1,
-                                 0xabd40a0c2832a78a,
-                                 0x16c90c8f323f516c,
-                                 0xae3da7d97f6792e3,
-                                 0x99cd11cfdf41779c,
-                                 0x40405643d711d583,
-                                 0x482835ea666b2572,
-                                 0xda3243650005eecf,
-                                 0x90bed43e40076a82,
-                                 0x5a7744a6e804a291,
-                                 0x711515d0a205cb36,
-                                 0xd5a5b44ca873e03,
-                                 0xe858790afe9486c2,
-                                 0x626e974dbe39a872,
-                                 0xfb0a3d212dc8128f,
-                                 0x7ce66634bc9d0b99,
-                                 0x1c1fffc1ebc44e80,
-                                 0xa327ffb266b56220,
-                                 0x4bf1ff9f0062baa8,
-                                 0x6f773fc3603db4a9,
-                                 0xcb550fb4384d21d3,
-                                 0x7e2a53a146606a48,
-                                 0x2eda7444cbfc426d,
-                                 0xfa911155fefb5308,
-                                 0x793555ab7eba27ca,
-                                 0x4bc1558b2f3458de,
-                                 0x9eb1aaedfb016f16,
-                                 0x465e15a979c1cadc,
-                                 0xbfacd89ec191ec9,
-                                 0xcef980ec671f667b,
-                                 0x82b7e12780e7401a,
-                                 0xd1b2ecb8b0908810,
-                                 0x861fa7e6dcb4aa15,
-                                 0x67a791e093e1d49a,
-                                 0xe0c8bb2c5c6d24e0,
-                                 0x58fae9f773886e18,
-                                 0xaf39a475506a899e,
-                                 0x6d8406c952429603,
-                                 0xc8e5087ba6d33b83,
-                                 0xfb1e4a9a90880a64,
-                                 0x5cf2eea09a55067f,
-                                 0xf42faa48c0ea481e,
-                                 0xf13b94daf124da26,
-                                 0x76c53d08d6b70858,
-                                 0x54768c4b0c64ca6e,
-                                 0xa9942f5dcf7dfd09,
-                                 0xd3f93b35435d7c4c,
-                                 0xc47bc5014a1a6daf,
-                                 0x359ab6419ca1091b,
-                                 0xc30163d203c94b62,
-                                 0x79e0de63425dcf1d,
-                                 0x985915fc12f542e4,
-                                 0x3e6f5b7b17b2939d,
-                                 0xa705992ceecf9c42,
-                                 0x50c6ff782a838353,
-                                 0xa4f8bf5635246428,
-                                 0x871b7795e136be99,
-                                 0x28e2557b59846e3f,
-                                 0x331aeada2fe589cf,
-                                 0x3ff0d2c85def7621,
-                                 0xfed077a756b53a9,
-                                 0xd3e8495912c62894,
-                                 0x64712dd7abbbd95c,
-                                 0xbd8d794d96aacfb3,
-                                 0xecf0d7a0fc5583a0,
-                                 0xf41686c49db57244,
-                                 0x311c2875c522ced5,
-                                 0x7d633293366b828b,
-                                 0xae5dff9c02033197,
-                                 0xd9f57f830283fdfc,
-                                 0xd072df63c324fd7b,
-                                 0x4247cb9e59f71e6d,
-                                 0x52d9be85f074e608,
-                                 0x67902e276c921f8b,
-                                 0xba1cd8a3db53b6,
-                                 0x80e8a40eccd228a4,
-                                 0x6122cd128006b2cd,
-                                 0x796b805720085f81,
-                                 0xcbe3303674053bb0,
-                                 0xbedbfc4411068a9c,
-                                 0xee92fb5515482d44,
-                                 0x751bdd152d4d1c4a,
-                                 0xd262d45a78a0635d,
-                                 0x86fb897116c87c34,
-                                 0xd45d35e6ae3d4da0,
-                                 0x8974836059cca109,
-                                 0x2bd1a438703fc94b,
-                                 0x7b6306a34627ddcf,
-                                 0x1a3bc84c17b1d542,
-                                 0x20caba5f1d9e4a93,
-                                 0x547eb47b7282ee9c,
-                                 0xe99e619a4f23aa43,
-                                 0x6405fa00e2ec94d4,
-                                 0xde83bc408dd3dd04,
-                                 0x9624ab50b148d445,
-                                 0x3badd624dd9b0957,
-                                 0xe54ca5d70a80e5d6,
-                                 0x5e9fcf4ccd211f4c,
-                                 0x7647c3200069671f,
-                                 0x29ecd9f40041e073,
-                                 0xf468107100525890,
-                                 0x7182148d4066eeb4,
-                                 0xc6f14cd848405530,
-                                 0xb8ada00e5a506a7c,
-                                 0xa6d90811f0e4851c,
-                                 0x908f4a166d1da663,
-                                 0x9a598e4e043287fe,
-                                 0x40eff1e1853f29fd,
-                                 0xd12bee59e68ef47c,
-                                 0x82bb74f8301958ce,
-                                 0xe36a52363c1faf01,
-                                 0xdc44e6c3cb279ac1,
-                                 0x29ab103a5ef8c0b9,
-                                 0x7415d448f6b6f0e7,
-                                 0x111b495b3464ad21,
-                                 0xcab10dd900beec34,
-                                 0x3d5d514f40eea742,
-                                 0xcb4a5a3112a5112,
-                                 0x47f0e785eaba72ab,
-                                 0x59ed216765690f56,
-                                 0x306869c13ec3532c,
-                                 0x1e414218c73a13fb,
-                                 0xe5d1929ef90898fa,
-                                 0xdf45f746b74abf39,
-                                 0x6b8bba8c328eb783,
-                                 0x66ea92f3f326564,
-                                 0xc80a537b0efefebd,
-                                 0xbd06742ce95f5f36,
-                                 0x2c48113823b73704,
-                                 0xf75a15862ca504c5,
-                                 0x9a984d73dbe722fb,
-                                 0xc13e60d0d2e0ebba,
-                                 0x318df905079926a8,
-                                 0xfdf17746497f7052,
-                                 0xfeb6ea8bedefa633,
-                                 0xfe64a52ee96b8fc0,
-                                 0x3dfdce7aa3c673b0,
-                                 0x6bea10ca65c084e,
-                                 0x486e494fcff30a62,
-                                 0x5a89dba3c3efccfa,
-                                 0xf89629465a75e01c,
-                                 0xf6bbb397f1135823,
-                                 0x746aa07ded582e2c,
-                                 0xa8c2a44eb4571cdc,
-                                 0x92f34d62616ce413,
-                                 0x77b020baf9c81d17,
-                                 0xace1474dc1d122e,
-                                 0xd819992132456ba,
-                                 0x10e1fff697ed6c69,
-                                 0xca8d3ffa1ef463c1,
-                                 0xbd308ff8a6b17cb2,
-                                 0xac7cb3f6d05ddbde,
-                                 0x6bcdf07a423aa96b,
-                                 0x86c16c98d2c953c6,
-                                 0xe871c7bf077ba8b7,
-                                 0x11471cd764ad4972,
-                                 0xd598e40d3dd89bcf,
-                                 0x4aff1d108d4ec2c3,
-                                 0xcedf722a585139ba,
-                                 0xc2974eb4ee658828,
-                                 0x733d226229feea32,
-                                 0x806357d5a3f525f,
-                                 0xca07c2dcb0cf26f7,
-                                 0xfc89b393dd02f0b5,
-                                 0xbbac2078d443ace2,
-                                 0xd54b944b84aa4c0d,
-                                 0xa9e795e65d4df11,
-                                 0x4d4617b5ff4a16d5,
-                                 0x504bced1bf8e4e45,
-                                 0xe45ec2862f71e1d6,
-                                 0x5d767327bb4e5a4c,
-                                 0x3a6a07f8d510f86f,
-                                 0x890489f70a55368b,
-                                 0x2b45ac74ccea842e,
-                                 0x3b0b8bc90012929d,
-                                 0x9ce6ebb40173744,
-                                 0xcc420a6a101d0515,
-                                 0x9fa946824a12232d,
-                                 0x47939822dc96abf9,
-                                 0x59787e2b93bc56f7,
-                                 0x57eb4edb3c55b65a,
-                                 0xede622920b6b23f1,
-                                 0xe95fab368e45eced,
-                                 0x11dbcb0218ebb414,
-                                 0xd652bdc29f26a119,
-                                 0x4be76d3346f0495f,
-                                 0x6f70a4400c562ddb,
-                                 0xcb4ccd500f6bb952,
-                                 0x7e2000a41346a7a7,
-                                 0x8ed400668c0c28c8,
-                                 0x728900802f0f32fa,
-                                 0x4f2b40a03ad2ffb9,
-                                 0xe2f610c84987bfa8,
-                                 0xdd9ca7d2df4d7c9,
-                                 0x91503d1c79720dbb,
-                                 0x75a44c6397ce912a,
-                                 0xc986afbe3ee11aba,
-                                 0xfbe85badce996168,
-                                 0xfae27299423fb9c3,
-                                 0xdccd879fc967d41a,
-                                 0x5400e987bbc1c920,
-                                 0x290123e9aab23b68,
-                                 0xf9a0b6720aaf6521,
-                                 0xf808e40e8d5b3e69,
-                                 0xb60b1d1230b20e04,
-                                 0xb1c6f22b5e6f48c2,
-                                 0x1e38aeb6360b1af3,
-                                 0x25c6da63c38de1b0,
-                                 0x579c487e5a38ad0e,
-                                 0x2d835a9df0c6d851,
-                                 0xf8e431456cf88e65,
-                                 0x1b8e9ecb641b58ff,
-                                 0xe272467e3d222f3f,
-                                 0x5b0ed81dcc6abb0f,
-                                 0x98e947129fc2b4e9,
-                                 0x3f2398d747b36224,
-                                 0x8eec7f0d19a03aad,
-                                 0x1953cf68300424ac,
-                                 0x5fa8c3423c052dd7,
-                                 0x3792f412cb06794d,
-                                 0xe2bbd88bbee40bd0,
-                                 0x5b6aceaeae9d0ec4,
-                                 0xf245825a5a445275,
-                                 0xeed6e2f0f0d56712,
-                                 0x55464dd69685606b,
-                                 0xaa97e14c3c26b886,
-                                 0xd53dd99f4b3066a8,
-                                 0xe546a8038efe4029,
-                                 0xde98520472bdd033,
-                                 0x963e66858f6d4440,
-                                 0xdde7001379a44aa8,
-                                 0x5560c018580d5d52,
-                                 0xaab8f01e6e10b4a6,
-                                 0xcab3961304ca70e8,
-                                 0x3d607b97c5fd0d22,
-                                 0x8cb89a7db77c506a,
-                                 0x77f3608e92adb242,
-                                 0x55f038b237591ed3,
-                                 0x6b6c46dec52f6688,
-                                 0x2323ac4b3b3da015,
-                                 0xabec975e0a0d081a,
-                                 0x96e7bd358c904a21,
-                                 0x7e50d64177da2e54,
-                                 0xdde50bd1d5d0b9e9,
-                                 0x955e4ec64b44e864,
-                                 0xbd5af13bef0b113e,
-                                 0xecb1ad8aeacdd58e,
-                                 0x67de18eda5814af2,
-                                 0x80eacf948770ced7,
-                                 0xa1258379a94d028d,
-                                 0x96ee45813a04330,
-                                 0x8bca9d6e188853fc,
-                                 0x775ea264cf55347d,
-                                 0x95364afe032a819d,
-                                 0x3a83ddbd83f52204,
-                                 0xc4926a9672793542,
-                                 0x75b7053c0f178293,
-                                 0x5324c68b12dd6338,
-                                 0xd3f6fc16ebca5e03,
-                                 0x88f4bb1ca6bcf584,
-                                 0x2b31e9e3d06c32e5,
-                                 0x3aff322e62439fcf,
-                                 0x9befeb9fad487c2,
-                                 0x4c2ebe687989a9b3,
-                                 0xf9d37014bf60a10,
-                                 0x538484c19ef38c94,
-                                 0x2865a5f206b06fb9,
-                                 0xf93f87b7442e45d3,
-                                 0xf78f69a51539d748,
-                                 0xb573440e5a884d1b,
-                                 0x31680a88f8953030,
-                                 0xfdc20d2b36ba7c3d,
-                                 0x3d32907604691b4c,
-                                 0xa63f9a49c2c1b10f,
-                                 0xfcf80dc33721d53,
-                                 0xd3c36113404ea4a8,
-                                 0x645a1cac083126e9,
-                                 0x3d70a3d70a3d70a3,
-                                 0xcccccccccccccccc,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x0,
-                                 0x4000000000000000,
-                                 0x5000000000000000,
-                                 0xa400000000000000,
-                                 0x4d00000000000000,
-                                 0xf020000000000000,
-                                 0x6c28000000000000,
-                                 0xc732000000000000,
-                                 0x3c7f400000000000,
-                                 0x4b9f100000000000,
-                                 0x1e86d40000000000,
-                                 0x1314448000000000,
-                                 0x17d955a000000000,
-                                 0x5dcfab0800000000,
-                                 0x5aa1cae500000000,
-                                 0xf14a3d9e40000000,
-                                 0x6d9ccd05d0000000,
-                                 0xe4820023a2000000,
-                                 0xdda2802c8a800000,
-                                 0xd50b2037ad200000,
-                                 0x4526f422cc340000,
-                                 0x9670b12b7f410000,
-                                 0x3c0cdd765f114000,
-                                 0xa5880a69fb6ac800,
-                                 0x8eea0d047a457a00,
-                                 0x72a4904598d6d880,
-                                 0x47a6da2b7f864750,
-                                 0x999090b65f67d924,
-                                 0xfff4b4e3f741cf6d,
-                                 0xbff8f10e7a8921a4,
-                                 0xaff72d52192b6a0d,
-                                 0x9bf4f8a69f764490,
-                                 0x2f236d04753d5b4,
-                                 0x1d762422c946590,
-                                 0x424d3ad2b7b97ef5,
-                                 0xd2e0898765a7deb2,
-                                 0x63cc55f49f88eb2f,
-                                 0x3cbf6b71c76b25fb,
-                                 0x8bef464e3945ef7a,
-                                 0x97758bf0e3cbb5ac,
-                                 0x3d52eeed1cbea317,
-                                 0x4ca7aaa863ee4bdd,
-                                 0x8fe8caa93e74ef6a,
-                                 0xb3e2fd538e122b44,
-                                 0x60dbbca87196b616,
-                                 0xbc8955e946fe31cd,
-                                 0x6babab6398bdbe41,
-                                 0xc696963c7eed2dd1,
-                                 0xfc1e1de5cf543ca2,
-                                 0x3b25a55f43294bcb,
-                                 0x49ef0eb713f39ebe,
-                                 0x6e3569326c784337,
-                                 0x49c2c37f07965404,
-                                 0xdc33745ec97be906,
-                                 0x69a028bb3ded71a3,
-                                 0xc40832ea0d68ce0c,
-                                 0xf50a3fa490c30190,
-                                 0x792667c6da79e0fa,
-                                 0x577001b891185938,
-                                 0xed4c0226b55e6f86,
-                                 0x544f8158315b05b4,
-                                 0x696361ae3db1c721,
-                                 0x3bc3a19cd1e38e9,
-                                 0x4ab48a04065c723,
-                                 0x62eb0d64283f9c76,
-                                 0x3ba5d0bd324f8394,
-                                 0xca8f44ec7ee36479,
-                                 0x7e998b13cf4e1ecb,
-                                 0x9e3fedd8c321a67e,
-                                 0xc5cfe94ef3ea101e,
-                                 0xbba1f1d158724a12,
-                                 0x2a8a6e45ae8edc97,
-                                 0xf52d09d71a3293bd,
-                                 0x593c2626705f9c56,
-                                 0x6f8b2fb00c77836c,
-                                 0xb6dfb9c0f956447,
-                                 0x4724bd4189bd5eac,
-                                 0x58edec91ec2cb657,
-                                 0x2f2967b66737e3ed,
-                                 0xbd79e0d20082ee74,
-                                 0xecd8590680a3aa11,
-                                 0xe80e6f4820cc9495,
-                                 0x3109058d147fdcdd,
-                                 0xbd4b46f0599fd415,
-                                 0x6c9e18ac7007c91a,
-                                 0x3e2cf6bc604ddb0,
-                                 0x84db8346b786151c,
-                                 0xe612641865679a63,
-                                 0x4fcb7e8f3f60c07e,
-                                 0xe3be5e330f38f09d,
-                                 0x5cadf5bfd3072cc5,
-                                 0x73d9732fc7c8f7f6,
-                                 0x2867e7fddcdd9afa,
-                                 0xb281e1fd541501b8,
-                                 0x1f225a7ca91a4226,
-                                 0x3375788de9b06958,
-                                 0x52d6b1641c83ae,
-                                 0xc0678c5dbd23a49a,
-                                 0xf840b7ba963646e0,
-                                 0xb650e5a93bc3d898,
-                                 0xa3e51f138ab4cebe,
-                                 0xc66f336c36b10137,
-                                 0xb80b0047445d4184,
-                                 0xa60dc059157491e5,
-                                 0x87c89837ad68db2f,
-                                 0x29babe4598c311fb,
-                                 0xf4296dd6fef3d67a,
-                                 0x1899e4a65f58660c,
-                                 0x5ec05dcff72e7f8f,
-                                 0x76707543f4fa1f73,
-                                 0x6a06494a791c53a8,
-                                 0x487db9d17636892,
-                                 0x45a9d2845d3c42b6,
-                                 0xb8a2392ba45a9b2,
-                                 0x8e6cac7768d7141e,
-                                 0x3207d795430cd926,
-                                 0x7f44e6bd49e807b8,
-                                 0x5f16206c9c6209a6,
-                                 0x36dba887c37a8c0f,
-                                 0xc2494954da2c9789,
-                                 0xf2db9baa10b7bd6c,
-                                 0x6f92829494e5acc7,
-                                 0xcb772339ba1f17f9,
-                                 0xff2a760414536efb,
-                                 0xfef5138519684aba,
-                                 0x7eb258665fc25d69,
-                                 0xef2f773ffbd97a61,
-                                 0xaafb550ffacfd8fa,
-                                 0x95ba2a53f983cf38,
-                                 0xdd945a747bf26183,
-                                 0x94f971119aeef9e4,
-                                 0x7a37cd5601aab85d,
-                                 0xac62e055c10ab33a,
-                                 0x577b986b314d6009,
-                                 0xed5a7e85fda0b80b,
-                                 0x14588f13be847307,
-                                 0x596eb2d8ae258fc8,
-                                 0x6fca5f8ed9aef3bb,
-                                 0x25de7bb9480d5854,
-                                 0xaf561aa79a10ae6a,
-                                 0x1b2ba1518094da04,
-                                 0x90fb44d2f05d0842,
-                                 0x353a1607ac744a53,
-                                 0x42889b8997915ce8,
-                                 0x69956135febada11,
-                                 0x43fab9837e699095,
-                                 0x94f967e45e03f4bb,
-                                 0x1d1be0eebac278f5,
-                                 0x6462d92a69731732,
-                                 0x7d7b8f7503cfdcfe,
-                                 0x5cda735244c3d43e,
-                                 0x3a0888136afa64a7,
-                                 0x88aaa1845b8fdd0,
-                                 0x8aad549e57273d45,
-                                 0x36ac54e2f678864b,
-                                 0x84576a1bb416a7dd,
-                                 0x656d44a2a11c51d5,
-                                 0x9f644ae5a4b1b325,
-                                 0x873d5d9f0dde1fee,
-                                 0xa90cb506d155a7ea,
-                                 0x9a7f12442d588f2,
-                                 0xc11ed6d538aeb2f,
-                                 0x8f1668c8a86da5fa,
-                                 0xf96e017d694487bc,
-                                 0x37c981dcc395a9ac,
-                                 0x85bbe253f47b1417,
-                                 0x93956d7478ccec8e,
-                                 0x387ac8d1970027b2,
-                                 0x6997b05fcc0319e,
-                                 0x441fece3bdf81f03,
-                                 0xd527e81cad7626c3,
-                                 0x8a71e223d8d3b074,
-                                 0xf6872d5667844e49,
-                                 0xb428f8ac016561db,
-                                 0xe13336d701beba52,
-                                 0xecc0024661173473,
-                                 0x27f002d7f95d0190,
-                                 0x31ec038df7b441f4,
-                                 0x7e67047175a15271,
-                                 0xf0062c6e984d386,
-                                 0x52c07b78a3e60868,
-                                 0xa7709a56ccdf8a82,
-                                 0x88a66076400bb691,
-                                 0x6acff893d00ea435,
-                                 0x583f6b8c4124d43,
-                                 0xc3727a337a8b704a,
-                                 0x744f18c0592e4c5c,
-                                 0x1162def06f79df73,
-                                 0x8addcb5645ac2ba8,
-                                 0x6d953e2bd7173692,
-                                 0xc8fa8db6ccdd0437,
-                                 0x1d9c9892400a22a2,
-                                 0x2503beb6d00cab4b,
-                                 0x2e44ae64840fd61d,
-                                 0x5ceaecfed289e5d2,
-                                 0x7425a83e872c5f47,
-                                 0xd12f124e28f77719,
-                                 0x82bd6b70d99aaa6f,
-                                 0x636cc64d1001550b,
-                                 0x3c47f7e05401aa4e,
-                                 0x65acfaec34810a71,
-                                 0x7f1839a741a14d0d,
-                                 0x1ede48111209a050,
-                                 0x934aed0aab460432,
-                                 0xf81da84d5617853f,
-                                 0x36251260ab9d668e,
-                                 0xc1d72b7c6b426019,
-                                 0xb24cf65b8612f81f,
-                                 0xdee033f26797b627,
-                                 0x169840ef017da3b1,
-                                 0x8e1f289560ee864e,
-                                 0xf1a6f2bab92a27e2,
-                                 0xae10af696774b1db,
-                                 0xacca6da1e0a8ef29,
-                                 0x17fd090a58d32af3,
-                                 0xddfc4b4cef07f5b0,
-                                 0x4abdaf101564f98e,
-                                 0x9d6d1ad41abe37f1,
-                                 0x84c86189216dc5ed,
-                                 0x32fd3cf5b4e49bb4,
-                                 0x3fbc8c33221dc2a1,
-                                 0xfabaf3feaa5334a,
-                                 0x29cb4d87f2a7400e,
-                                 0x743e20e9ef511012,
-                                 0x914da9246b255416,
-                                 0x1ad089b6c2f7548e,
-                                 0xa184ac2473b529b1,
-                                 0xc9e5d72d90a2741e,
-                                 0x7e2fa67c7a658892,
-                                 0xddbb901b98feeab7,
-                                 0x552a74227f3ea565,
-                                 0xd53a88958f87275f,
-                                 0x8a892abaf368f137,
-                                 0x2d2b7569b0432d85,
-                                 0x9c3b29620e29fc73,
-                                 0x8349f3ba91b47b8f,
-                                 0x241c70a936219a73,
-                                 0xed238cd383aa0110,
-                                 0xf4363804324a40aa,
-                                 0xb143c6053edcd0d5,
-                                 0xdd94b7868e94050a,
-                                 0xca7cf2b4191c8326,
-                                 0xfd1c2f611f63a3f0,
-                                 0xbc633b39673c8cec,
-                                 0xd5be0503e085d813,
-                                 0x4b2d8644d8a74e18,
-                                 0xddf8e7d60ed1219e,
-                                 0xcabb90e5c942b503,
-                                 0x3d6a751f3b936243,
-                                 0xcc512670a783ad4,
-                                 0x27fb2b80668b24c5,
-                                 0xb1f9f660802dedf6,
-                                 0x5e7873f8a0396973,
-                                 0xdb0b487b6423e1e8,
-                                 0x91ce1a9a3d2cda62,
-                                 0x7641a140cc7810fb,
-                                 0xa9e904c87fcb0a9d,
-                                 0x546345fa9fbdcd44,
-                                 0xa97c177947ad4095,
-                                 0x49ed8eabcccc485d,
-                                 0x5c68f256bfff5a74,
-                                 0x73832eec6fff3111,
-                                 0xc831fd53c5ff7eab,
-                                 0xba3e7ca8b77f5e55,
-                                 0x28ce1bd2e55f35eb,
-                                 0x7980d163cf5b81b3,
-                                 0xd7e105bcc332621f,
-                                 0x8dd9472bf3fefaa7,
-                                 0xb14f98f6f0feb951,
-                                 0x6ed1bf9a569f33d3,
-                                 0xa862f80ec4700c8,
-                                 0xcd27bb612758c0fa,
-                                 0x8038d51cb897789c,
-                                 0xe0470a63e6bd56c3,
-                                 0x1858ccfce06cac74,
-                                 0xf37801e0c43ebc8,
-                                 0xd30560258f54e6ba,
-                                 0x47c6b82ef32a2069,
-                                 0x4cdc331d57fa5441,
-                                 0xe0133fe4adf8e952,
-                                 0x58180fddd97723a6,
-                                 0x570f09eaa7ea7648};
-
+const uint64_t mantissa_128[] = {
+    0x419ea3bd35385e2d,
+    0x52064cac828675b9,
+    0x7343efebd1940993,
+    0x1014ebe6c5f90bf8,
+    0xd41a26e077774ef6,
+    0x8920b098955522b4,
+    0x55b46e5f5d5535b0,
+    0xeb2189f734aa831d,
+    0xa5e9ec7501d523e4,
+    0x47b233c92125366e,
+    0x999ec0bb696e840a,
+    0xc00670ea43ca250d,
+    0x380406926a5e5728,
+    0xc605083704f5ecf2,
+    0xf7864a44c633682e,
+    0x7ab3ee6afbe0211d,
+    0x5960ea05bad82964,
+    0x6fb92487298e33bd,
+    0xa5d3b6d479f8e056,
+    0x8f48a4899877186c,
+    0x331acdabfe94de87,
+    0x9ff0c08b7f1d0b14,
+    0x7ecf0ae5ee44dd9,
+    0xc9e82cd9f69d6150,
+    0xbe311c083a225cd2,
+    0x6dbd630a48aaf406,
+    0x92cbbccdad5b108,
+    0x25bbf56008c58ea5,
+    0xaf2af2b80af6f24e,
+    0x1af5af660db4aee1,
+    0x50d98d9fc890ed4d,
+    0xe50ff107bab528a0,
+    0x1e53ed49a96272c8,
+    0x25e8e89c13bb0f7a,
+    0x77b191618c54e9ac,
+    0xd59df5b9ef6a2417,
+    0x4b0573286b44ad1d,
+    0x4ee367f9430aec32,
+    0x229c41f793cda73f,
+    0x6b43527578c1110f,
+    0x830a13896b78aaa9,
+    0x23cc986bc656d553,
+    0x2cbfbe86b7ec8aa8,
+    0x7bf7d71432f3d6a9,
+    0xdaf5ccd93fb0cc53,
+    0xd1b3400f8f9cff68,
+    0x23100809b9c21fa1,
+    0xabd40a0c2832a78a,
+    0x16c90c8f323f516c,
+    0xae3da7d97f6792e3,
+    0x99cd11cfdf41779c,
+    0x40405643d711d583,
+    0x482835ea666b2572,
+    0xda3243650005eecf,
+    0x90bed43e40076a82,
+    0x5a7744a6e804a291,
+    0x711515d0a205cb36,
+    0xd5a5b44ca873e03,
+    0xe858790afe9486c2,
+    0x626e974dbe39a872,
+    0xfb0a3d212dc8128f,
+    0x7ce66634bc9d0b99,
+    0x1c1fffc1ebc44e80,
+    0xa327ffb266b56220,
+    0x4bf1ff9f0062baa8,
+    0x6f773fc3603db4a9,
+    0xcb550fb4384d21d3,
+    0x7e2a53a146606a48,
+    0x2eda7444cbfc426d,
+    0xfa911155fefb5308,
+    0x793555ab7eba27ca,
+    0x4bc1558b2f3458de,
+    0x9eb1aaedfb016f16,
+    0x465e15a979c1cadc,
+    0xbfacd89ec191ec9,
+    0xcef980ec671f667b,
+    0x82b7e12780e7401a,
+    0xd1b2ecb8b0908810,
+    0x861fa7e6dcb4aa15,
+    0x67a791e093e1d49a,
+    0xe0c8bb2c5c6d24e0,
+    0x58fae9f773886e18,
+    0xaf39a475506a899e,
+    0x6d8406c952429603,
+    0xc8e5087ba6d33b83,
+    0xfb1e4a9a90880a64,
+    0x5cf2eea09a55067f,
+    0xf42faa48c0ea481e,
+    0xf13b94daf124da26,
+    0x76c53d08d6b70858,
+    0x54768c4b0c64ca6e,
+    0xa9942f5dcf7dfd09,
+    0xd3f93b35435d7c4c,
+    0xc47bc5014a1a6daf,
+    0x359ab6419ca1091b,
+    0xc30163d203c94b62,
+    0x79e0de63425dcf1d,
+    0x985915fc12f542e4,
+    0x3e6f5b7b17b2939d,
+    0xa705992ceecf9c42,
+    0x50c6ff782a838353,
+    0xa4f8bf5635246428,
+    0x871b7795e136be99,
+    0x28e2557b59846e3f,
+    0x331aeada2fe589cf,
+    0x3ff0d2c85def7621,
+    0xfed077a756b53a9,
+    0xd3e8495912c62894,
+    0x64712dd7abbbd95c,
+    0xbd8d794d96aacfb3,
+    0xecf0d7a0fc5583a0,
+    0xf41686c49db57244,
+    0x311c2875c522ced5,
+    0x7d633293366b828b,
+    0xae5dff9c02033197,
+    0xd9f57f830283fdfc,
+    0xd072df63c324fd7b,
+    0x4247cb9e59f71e6d,
+    0x52d9be85f074e608,
+    0x67902e276c921f8b,
+    0xba1cd8a3db53b6,
+    0x80e8a40eccd228a4,
+    0x6122cd128006b2cd,
+    0x796b805720085f81,
+    0xcbe3303674053bb0,
+    0xbedbfc4411068a9c,
+    0xee92fb5515482d44,
+    0x751bdd152d4d1c4a,
+    0xd262d45a78a0635d,
+    0x86fb897116c87c34,
+    0xd45d35e6ae3d4da0,
+    0x8974836059cca109,
+    0x2bd1a438703fc94b,
+    0x7b6306a34627ddcf,
+    0x1a3bc84c17b1d542,
+    0x20caba5f1d9e4a93,
+    0x547eb47b7282ee9c,
+    0xe99e619a4f23aa43,
+    0x6405fa00e2ec94d4,
+    0xde83bc408dd3dd04,
+    0x9624ab50b148d445,
+    0x3badd624dd9b0957,
+    0xe54ca5d70a80e5d6,
+    0x5e9fcf4ccd211f4c,
+    0x7647c3200069671f,
+    0x29ecd9f40041e073,
+    0xf468107100525890,
+    0x7182148d4066eeb4,
+    0xc6f14cd848405530,
+    0xb8ada00e5a506a7c,
+    0xa6d90811f0e4851c,
+    0x908f4a166d1da663,
+    0x9a598e4e043287fe,
+    0x40eff1e1853f29fd,
+    0xd12bee59e68ef47c,
+    0x82bb74f8301958ce,
+    0xe36a52363c1faf01,
+    0xdc44e6c3cb279ac1,
+    0x29ab103a5ef8c0b9,
+    0x7415d448f6b6f0e7,
+    0x111b495b3464ad21,
+    0xcab10dd900beec34,
+    0x3d5d514f40eea742,
+    0xcb4a5a3112a5112,
+    0x47f0e785eaba72ab,
+    0x59ed216765690f56,
+    0x306869c13ec3532c,
+    0x1e414218c73a13fb,
+    0xe5d1929ef90898fa,
+    0xdf45f746b74abf39,
+    0x6b8bba8c328eb783,
+    0x66ea92f3f326564,
+    0xc80a537b0efefebd,
+    0xbd06742ce95f5f36,
+    0x2c48113823b73704,
+    0xf75a15862ca504c5,
+    0x9a984d73dbe722fb,
+    0xc13e60d0d2e0ebba,
+    0x318df905079926a8,
+    0xfdf17746497f7052,
+    0xfeb6ea8bedefa633,
+    0xfe64a52ee96b8fc0,
+    0x3dfdce7aa3c673b0,
+    0x6bea10ca65c084e,
+    0x486e494fcff30a62,
+    0x5a89dba3c3efccfa,
+    0xf89629465a75e01c,
+    0xf6bbb397f1135823,
+    0x746aa07ded582e2c,
+    0xa8c2a44eb4571cdc,
+    0x92f34d62616ce413,
+    0x77b020baf9c81d17,
+    0xace1474dc1d122e,
+    0xd819992132456ba,
+    0x10e1fff697ed6c69,
+    0xca8d3ffa1ef463c1,
+    0xbd308ff8a6b17cb2,
+    0xac7cb3f6d05ddbde,
+    0x6bcdf07a423aa96b,
+    0x86c16c98d2c953c6,
+    0xe871c7bf077ba8b7,
+    0x11471cd764ad4972,
+    0xd598e40d3dd89bcf,
+    0x4aff1d108d4ec2c3,
+    0xcedf722a585139ba,
+    0xc2974eb4ee658828,
+    0x733d226229feea32,
+    0x806357d5a3f525f,
+    0xca07c2dcb0cf26f7,
+    0xfc89b393dd02f0b5,
+    0xbbac2078d443ace2,
+    0xd54b944b84aa4c0d,
+    0xa9e795e65d4df11,
+    0x4d4617b5ff4a16d5,
+    0x504bced1bf8e4e45,
+    0xe45ec2862f71e1d6,
+    0x5d767327bb4e5a4c,
+    0x3a6a07f8d510f86f,
+    0x890489f70a55368b,
+    0x2b45ac74ccea842e,
+    0x3b0b8bc90012929d,
+    0x9ce6ebb40173744,
+    0xcc420a6a101d0515,
+    0x9fa946824a12232d,
+    0x47939822dc96abf9,
+    0x59787e2b93bc56f7,
+    0x57eb4edb3c55b65a,
+    0xede622920b6b23f1,
+    0xe95fab368e45eced,
+    0x11dbcb0218ebb414,
+    0xd652bdc29f26a119,
+    0x4be76d3346f0495f,
+    0x6f70a4400c562ddb,
+    0xcb4ccd500f6bb952,
+    0x7e2000a41346a7a7,
+    0x8ed400668c0c28c8,
+    0x728900802f0f32fa,
+    0x4f2b40a03ad2ffb9,
+    0xe2f610c84987bfa8,
+    0xdd9ca7d2df4d7c9,
+    0x91503d1c79720dbb,
+    0x75a44c6397ce912a,
+    0xc986afbe3ee11aba,
+    0xfbe85badce996168,
+    0xfae27299423fb9c3,
+    0xdccd879fc967d41a,
+    0x5400e987bbc1c920,
+    0x290123e9aab23b68,
+    0xf9a0b6720aaf6521,
+    0xf808e40e8d5b3e69,
+    0xb60b1d1230b20e04,
+    0xb1c6f22b5e6f48c2,
+    0x1e38aeb6360b1af3,
+    0x25c6da63c38de1b0,
+    0x579c487e5a38ad0e,
+    0x2d835a9df0c6d851,
+    0xf8e431456cf88e65,
+    0x1b8e9ecb641b58ff,
+    0xe272467e3d222f3f,
+    0x5b0ed81dcc6abb0f,
+    0x98e947129fc2b4e9,
+    0x3f2398d747b36224,
+    0x8eec7f0d19a03aad,
+    0x1953cf68300424ac,
+    0x5fa8c3423c052dd7,
+    0x3792f412cb06794d,
+    0xe2bbd88bbee40bd0,
+    0x5b6aceaeae9d0ec4,
+    0xf245825a5a445275,
+    0xeed6e2f0f0d56712,
+    0x55464dd69685606b,
+    0xaa97e14c3c26b886,
+    0xd53dd99f4b3066a8,
+    0xe546a8038efe4029,
+    0xde98520472bdd033,
+    0x963e66858f6d4440,
+    0xdde7001379a44aa8,
+    0x5560c018580d5d52,
+    0xaab8f01e6e10b4a6,
+    0xcab3961304ca70e8,
+    0x3d607b97c5fd0d22,
+    0x8cb89a7db77c506a,
+    0x77f3608e92adb242,
+    0x55f038b237591ed3,
+    0x6b6c46dec52f6688,
+    0x2323ac4b3b3da015,
+    0xabec975e0a0d081a,
+    0x96e7bd358c904a21,
+    0x7e50d64177da2e54,
+    0xdde50bd1d5d0b9e9,
+    0x955e4ec64b44e864,
+    0xbd5af13bef0b113e,
+    0xecb1ad8aeacdd58e,
+    0x67de18eda5814af2,
+    0x80eacf948770ced7,
+    0xa1258379a94d028d,
+    0x96ee45813a04330,
+    0x8bca9d6e188853fc,
+    0x775ea264cf55347d,
+    0x95364afe032a819d,
+    0x3a83ddbd83f52204,
+    0xc4926a9672793542,
+    0x75b7053c0f178293,
+    0x5324c68b12dd6338,
+    0xd3f6fc16ebca5e03,
+    0x88f4bb1ca6bcf584,
+    0x2b31e9e3d06c32e5,
+    0x3aff322e62439fcf,
+    0x9befeb9fad487c2,
+    0x4c2ebe687989a9b3,
+    0xf9d37014bf60a10,
+    0x538484c19ef38c94,
+    0x2865a5f206b06fb9,
+    0xf93f87b7442e45d3,
+    0xf78f69a51539d748,
+    0xb573440e5a884d1b,
+    0x31680a88f8953030,
+    0xfdc20d2b36ba7c3d,
+    0x3d32907604691b4c,
+    0xa63f9a49c2c1b10f,
+    0xfcf80dc33721d53,
+    0xd3c36113404ea4a8,
+    0x645a1cac083126e9,
+    0x3d70a3d70a3d70a3,
+    0xcccccccccccccccc,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x4000000000000000,
+    0x5000000000000000,
+    0xa400000000000000,
+    0x4d00000000000000,
+    0xf020000000000000,
+    0x6c28000000000000,
+    0xc732000000000000,
+    0x3c7f400000000000,
+    0x4b9f100000000000,
+    0x1e86d40000000000,
+    0x1314448000000000,
+    0x17d955a000000000,
+    0x5dcfab0800000000,
+    0x5aa1cae500000000,
+    0xf14a3d9e40000000,
+    0x6d9ccd05d0000000,
+    0xe4820023a2000000,
+    0xdda2802c8a800000,
+    0xd50b2037ad200000,
+    0x4526f422cc340000,
+    0x9670b12b7f410000,
+    0x3c0cdd765f114000,
+    0xa5880a69fb6ac800,
+    0x8eea0d047a457a00,
+    0x72a4904598d6d880,
+    0x47a6da2b7f864750,
+    0x999090b65f67d924,
+    0xfff4b4e3f741cf6d,
+    0xbff8f10e7a8921a4,
+    0xaff72d52192b6a0d,
+    0x9bf4f8a69f764490,
+    0x2f236d04753d5b4,
+    0x1d762422c946590,
+    0x424d3ad2b7b97ef5,
+    0xd2e0898765a7deb2,
+    0x63cc55f49f88eb2f,
+    0x3cbf6b71c76b25fb,
+    0x8bef464e3945ef7a,
+    0x97758bf0e3cbb5ac,
+    0x3d52eeed1cbea317,
+    0x4ca7aaa863ee4bdd,
+    0x8fe8caa93e74ef6a,
+    0xb3e2fd538e122b44,
+    0x60dbbca87196b616,
+    0xbc8955e946fe31cd,
+    0x6babab6398bdbe41,
+    0xc696963c7eed2dd1,
+    0xfc1e1de5cf543ca2,
+    0x3b25a55f43294bcb,
+    0x49ef0eb713f39ebe,
+    0x6e3569326c784337,
+    0x49c2c37f07965404,
+    0xdc33745ec97be906,
+    0x69a028bb3ded71a3,
+    0xc40832ea0d68ce0c,
+    0xf50a3fa490c30190,
+    0x792667c6da79e0fa,
+    0x577001b891185938,
+    0xed4c0226b55e6f86,
+    0x544f8158315b05b4,
+    0x696361ae3db1c721,
+    0x3bc3a19cd1e38e9,
+    0x4ab48a04065c723,
+    0x62eb0d64283f9c76,
+    0x3ba5d0bd324f8394,
+    0xca8f44ec7ee36479,
+    0x7e998b13cf4e1ecb,
+    0x9e3fedd8c321a67e,
+    0xc5cfe94ef3ea101e,
+    0xbba1f1d158724a12,
+    0x2a8a6e45ae8edc97,
+    0xf52d09d71a3293bd,
+    0x593c2626705f9c56,
+    0x6f8b2fb00c77836c,
+    0xb6dfb9c0f956447,
+    0x4724bd4189bd5eac,
+    0x58edec91ec2cb657,
+    0x2f2967b66737e3ed,
+    0xbd79e0d20082ee74,
+    0xecd8590680a3aa11,
+    0xe80e6f4820cc9495,
+    0x3109058d147fdcdd,
+    0xbd4b46f0599fd415,
+    0x6c9e18ac7007c91a,
+    0x3e2cf6bc604ddb0,
+    0x84db8346b786151c,
+    0xe612641865679a63,
+    0x4fcb7e8f3f60c07e,
+    0xe3be5e330f38f09d,
+    0x5cadf5bfd3072cc5,
+    0x73d9732fc7c8f7f6,
+    0x2867e7fddcdd9afa,
+    0xb281e1fd541501b8,
+    0x1f225a7ca91a4226,
+    0x3375788de9b06958,
+    0x52d6b1641c83ae,
+    0xc0678c5dbd23a49a,
+    0xf840b7ba963646e0,
+    0xb650e5a93bc3d898,
+    0xa3e51f138ab4cebe,
+    0xc66f336c36b10137,
+    0xb80b0047445d4184,
+    0xa60dc059157491e5,
+    0x87c89837ad68db2f,
+    0x29babe4598c311fb,
+    0xf4296dd6fef3d67a,
+    0x1899e4a65f58660c,
+    0x5ec05dcff72e7f8f,
+    0x76707543f4fa1f73,
+    0x6a06494a791c53a8,
+    0x487db9d17636892,
+    0x45a9d2845d3c42b6,
+    0xb8a2392ba45a9b2,
+    0x8e6cac7768d7141e,
+    0x3207d795430cd926,
+    0x7f44e6bd49e807b8,
+    0x5f16206c9c6209a6,
+    0x36dba887c37a8c0f,
+    0xc2494954da2c9789,
+    0xf2db9baa10b7bd6c,
+    0x6f92829494e5acc7,
+    0xcb772339ba1f17f9,
+    0xff2a760414536efb,
+    0xfef5138519684aba,
+    0x7eb258665fc25d69,
+    0xef2f773ffbd97a61,
+    0xaafb550ffacfd8fa,
+    0x95ba2a53f983cf38,
+    0xdd945a747bf26183,
+    0x94f971119aeef9e4,
+    0x7a37cd5601aab85d,
+    0xac62e055c10ab33a,
+    0x577b986b314d6009,
+    0xed5a7e85fda0b80b,
+    0x14588f13be847307,
+    0x596eb2d8ae258fc8,
+    0x6fca5f8ed9aef3bb,
+    0x25de7bb9480d5854,
+    0xaf561aa79a10ae6a,
+    0x1b2ba1518094da04,
+    0x90fb44d2f05d0842,
+    0x353a1607ac744a53,
+    0x42889b8997915ce8,
+    0x69956135febada11,
+    0x43fab9837e699095,
+    0x94f967e45e03f4bb,
+    0x1d1be0eebac278f5,
+    0x6462d92a69731732,
+    0x7d7b8f7503cfdcfe,
+    0x5cda735244c3d43e,
+    0x3a0888136afa64a7,
+    0x88aaa1845b8fdd0,
+    0x8aad549e57273d45,
+    0x36ac54e2f678864b,
+    0x84576a1bb416a7dd,
+    0x656d44a2a11c51d5,
+    0x9f644ae5a4b1b325,
+    0x873d5d9f0dde1fee,
+    0xa90cb506d155a7ea,
+    0x9a7f12442d588f2,
+    0xc11ed6d538aeb2f,
+    0x8f1668c8a86da5fa,
+    0xf96e017d694487bc,
+    0x37c981dcc395a9ac,
+    0x85bbe253f47b1417,
+    0x93956d7478ccec8e,
+    0x387ac8d1970027b2,
+    0x6997b05fcc0319e,
+    0x441fece3bdf81f03,
+    0xd527e81cad7626c3,
+    0x8a71e223d8d3b074,
+    0xf6872d5667844e49,
+    0xb428f8ac016561db,
+    0xe13336d701beba52,
+    0xecc0024661173473,
+    0x27f002d7f95d0190,
+    0x31ec038df7b441f4,
+    0x7e67047175a15271,
+    0xf0062c6e984d386,
+    0x52c07b78a3e60868,
+    0xa7709a56ccdf8a82,
+    0x88a66076400bb691,
+    0x6acff893d00ea435,
+    0x583f6b8c4124d43,
+    0xc3727a337a8b704a,
+    0x744f18c0592e4c5c,
+    0x1162def06f79df73,
+    0x8addcb5645ac2ba8,
+    0x6d953e2bd7173692,
+    0xc8fa8db6ccdd0437,
+    0x1d9c9892400a22a2,
+    0x2503beb6d00cab4b,
+    0x2e44ae64840fd61d,
+    0x5ceaecfed289e5d2,
+    0x7425a83e872c5f47,
+    0xd12f124e28f77719,
+    0x82bd6b70d99aaa6f,
+    0x636cc64d1001550b,
+    0x3c47f7e05401aa4e,
+    0x65acfaec34810a71,
+    0x7f1839a741a14d0d,
+    0x1ede48111209a050,
+    0x934aed0aab460432,
+    0xf81da84d5617853f,
+    0x36251260ab9d668e,
+    0xc1d72b7c6b426019,
+    0xb24cf65b8612f81f,
+    0xdee033f26797b627,
+    0x169840ef017da3b1,
+    0x8e1f289560ee864e,
+    0xf1a6f2bab92a27e2,
+    0xae10af696774b1db,
+    0xacca6da1e0a8ef29,
+    0x17fd090a58d32af3,
+    0xddfc4b4cef07f5b0,
+    0x4abdaf101564f98e,
+    0x9d6d1ad41abe37f1,
+    0x84c86189216dc5ed,
+    0x32fd3cf5b4e49bb4,
+    0x3fbc8c33221dc2a1,
+    0xfabaf3feaa5334a,
+    0x29cb4d87f2a7400e,
+    0x743e20e9ef511012,
+    0x914da9246b255416,
+    0x1ad089b6c2f7548e,
+    0xa184ac2473b529b1,
+    0xc9e5d72d90a2741e,
+    0x7e2fa67c7a658892,
+    0xddbb901b98feeab7,
+    0x552a74227f3ea565,
+    0xd53a88958f87275f,
+    0x8a892abaf368f137,
+    0x2d2b7569b0432d85,
+    0x9c3b29620e29fc73,
+    0x8349f3ba91b47b8f,
+    0x241c70a936219a73,
+    0xed238cd383aa0110,
+    0xf4363804324a40aa,
+    0xb143c6053edcd0d5,
+    0xdd94b7868e94050a,
+    0xca7cf2b4191c8326,
+    0xfd1c2f611f63a3f0,
+    0xbc633b39673c8cec,
+    0xd5be0503e085d813,
+    0x4b2d8644d8a74e18,
+    0xddf8e7d60ed1219e,
+    0xcabb90e5c942b503,
+    0x3d6a751f3b936243,
+    0xcc512670a783ad4,
+    0x27fb2b80668b24c5,
+    0xb1f9f660802dedf6,
+    0x5e7873f8a0396973,
+    0xdb0b487b6423e1e8,
+    0x91ce1a9a3d2cda62,
+    0x7641a140cc7810fb,
+    0xa9e904c87fcb0a9d,
+    0x546345fa9fbdcd44,
+    0xa97c177947ad4095,
+    0x49ed8eabcccc485d,
+    0x5c68f256bfff5a74,
+    0x73832eec6fff3111,
+    0xc831fd53c5ff7eab,
+    0xba3e7ca8b77f5e55,
+    0x28ce1bd2e55f35eb,
+    0x7980d163cf5b81b3,
+    0xd7e105bcc332621f,
+    0x8dd9472bf3fefaa7,
+    0xb14f98f6f0feb951,
+    0x6ed1bf9a569f33d3,
+    0xa862f80ec4700c8,
+    0xcd27bb612758c0fa,
+    0x8038d51cb897789c,
+    0xe0470a63e6bd56c3,
+    0x1858ccfce06cac74,
+    0xf37801e0c43ebc8,
+    0xd30560258f54e6ba,
+    0x47c6b82ef32a2069,
+    0x4cdc331d57fa5441,
+    0xe0133fe4adf8e952,
+    0x58180fddd97723a6,
+    0x570f09eaa7ea7648,
+};
 
 } // namespace simdjson
 
@@ -6656,7 +6997,8 @@ const uint64_t mantissa_128[] = {0x419ea3bd35385e2d,
 #define SIMDJSON_DOCUMENT_PARSER_CALLBACKS_H
 
 
-namespace simdjson::dom {
+namespace simdjson {
+namespace dom {
 
 //
 // Parser callbacks
@@ -6678,39 +7020,50 @@ really_inline error_code parser::on_success(error_code success_code) noexcept {
   valid = true;
   return success_code;
 }
+// increment_count increments the count of keys in an object or values in an array.
+// Note that if you are at the level of the values or elements, the count
+// must be increment in the preceding depth (depth-1) where the array or
+// the object resides.
+really_inline void parser::increment_count(uint32_t depth) noexcept {
+  containing_scope[depth].count++;
+}
+
 really_inline bool parser::on_start_document(uint32_t depth) noexcept {
-  containing_scope_offset[depth] = current_loc;
-  write_tape(0, internal::tape_type::ROOT);
+  containing_scope[depth].tape_index = current_loc;
+  containing_scope[depth].count = 0;
+  write_tape(0, internal::tape_type::ROOT); // if the document is correct, this gets rewritten later
   return true;
 }
 really_inline bool parser::on_start_object(uint32_t depth) noexcept {
-  containing_scope_offset[depth] = current_loc;
-  write_tape(0, internal::tape_type::START_OBJECT);
+  containing_scope[depth].tape_index = current_loc;
+  containing_scope[depth].count = 0;
+  write_tape(0, internal::tape_type::START_OBJECT);  // if the document is correct, this gets rewritten later
   return true;
 }
 really_inline bool parser::on_start_array(uint32_t depth) noexcept {
-  containing_scope_offset[depth] = current_loc;
-  write_tape(0, internal::tape_type::START_ARRAY);
+  containing_scope[depth].tape_index = current_loc;
+  containing_scope[depth].count = 0;
+  write_tape(0, internal::tape_type::START_ARRAY);  // if the document is correct, this gets rewritten later
   return true;
 }
 // TODO we're not checking this bool
 really_inline bool parser::on_end_document(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
   // The root scope gets written *at* the previous location.
-  annotate_previous_loc(containing_scope_offset[depth], current_loc);
-  write_tape(containing_scope_offset[depth], internal::tape_type::ROOT);
+  write_tape(containing_scope[depth].tape_index, internal::tape_type::ROOT);
+  end_scope(depth);
   return true;
 }
 really_inline bool parser::on_end_object(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
-  write_tape(containing_scope_offset[depth], internal::tape_type::END_OBJECT);
-  annotate_previous_loc(containing_scope_offset[depth], current_loc);
+  write_tape(containing_scope[depth].tape_index, internal::tape_type::END_OBJECT);
+  end_scope(depth);
   return true;
 }
 really_inline bool parser::on_end_array(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
-  write_tape(containing_scope_offset[depth], internal::tape_type::END_ARRAY);
-  annotate_previous_loc(containing_scope_offset[depth], current_loc);
+  write_tape(containing_scope[depth].tape_index, internal::tape_type::END_ARRAY);
+  end_scope(depth);
   return true;
 }
 
@@ -6735,7 +7088,7 @@ really_inline uint8_t *parser::on_start_string() noexcept {
 }
 
 really_inline bool parser::on_end_string(uint8_t *dst) noexcept {
-  uint32_t str_length = dst - (current_string_buf_loc + sizeof(uint32_t));
+  uint32_t str_length = uint32_t(dst - (current_string_buf_loc + sizeof(uint32_t)));
   // TODO check for overflow in case someone has a crazy string (>=4GB?)
   // But only add the overflow check when the document itself exceeds 4GB
   // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
@@ -6767,14 +7120,21 @@ really_inline bool parser::on_number_double(double value) noexcept {
 }
 
 really_inline void parser::write_tape(uint64_t val, internal::tape_type t) noexcept {
-  doc.tape[current_loc++] = val | ((static_cast<uint64_t>(static_cast<char>(t))) << 56);
+  doc.tape[current_loc++] = val | ((uint64_t(char(t))) << 56);
 }
 
-really_inline void parser::annotate_previous_loc(uint32_t saved_loc, uint64_t val) noexcept {
-  doc.tape[saved_loc] |= val;
+// this function is responsible for annotating the start of the scope
+really_inline void parser::end_scope(uint32_t depth) noexcept {
+  scope_descriptor d = containing_scope[depth];
+  // count can overflow if it exceeds 24 bits... so we saturate
+  // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
+  const uint32_t cntsat =  d.count > 0xFFFFFF ? 0xFFFFFF : d.count;
+  // This is a load and an OR. It would be possible to just write once at doc.tape[d.tape_index]
+  doc.tape[d.tape_index] |= current_loc | (uint64_t(cntsat) << 32);
 }
 
-} // namespace simdjson::dom
+} // namespace simdjson
+} // namespace dom
 
 #endif // SIMDJSON_DOCUMENT_PARSER_CALLBACKS_H
 /* end file src/document_parser_callbacks.h */
@@ -6802,7 +7162,8 @@ void found_bad_string(const uint8_t *buf);
 /* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
 /* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
 using namespace simd;
 
@@ -6824,7 +7185,7 @@ public:
 really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1));
+  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "backslash and quote finder must process fewer than SIMDJSON_PADDING bytes");
   simd8<uint8_t> v0(src);
   simd8<uint8_t> v1(src + sizeof(v0));
   v0.store(dst);
@@ -6834,8 +7195,8 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
   // smash them together into a 64-byte mask and get the bitmask from there.
   uint64_t bs_and_quote = simd8x64<bool>(v0 == '\\', v1 == '\\', v0 == '"', v1 == '"').to_bitmask();
   return {
-    static_cast<uint32_t>(bs_and_quote),      // bs_bits
-    static_cast<uint32_t>(bs_and_quote >> 32) // quote_bits
+    uint32_t(bs_and_quote),      // bs_bits
+    uint32_t(bs_and_quote >> 32) // quote_bits
   };
 }
 
@@ -6963,8 +7324,8 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
 } // namespace stringparsing
 /* end file src/generic/stringparsing.h */
 
-}
-// namespace simdjson::amd64
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_STRINGPARSING_H
 /* end file src/generic/stringparsing.h */
@@ -6986,7 +7347,8 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf);
 void found_float(double result, const uint8_t *buf);
 #endif
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
 // we don't have SSE, so let us use a scalar function
 // credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
@@ -6995,7 +7357,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   memcpy(&val, chars, sizeof(uint64_t));
   val = (val & 0x0F0F0F0F0F0F0F0F) * 2561 >> 8;
   val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
-  return (val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32;
+  return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
 }
 
 #define SWAR_NUMBER_PARSING
@@ -7019,7 +7381,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   if (-22 <= power && power <= 22 && i <= 9007199254740991) {
     // convert the integer into a double. This is lossless since
     // 0 <= i <= 2^53 - 1.
-    double d = i;
+    double d = double(i);
     //
     // The general idea is as follows.
     // If 0 <= s < 2^53 and if 10^0 <= p <= 10^22 then
@@ -7125,7 +7487,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   ///////
   uint64_t upperbit = upper >> 63;
   uint64_t mantissa = upper >> (upperbit + 9);
-  lz += 1 ^ upperbit;
+  lz += int(1 ^ upperbit);
 
   // Here we have mantissa < (1<<54).
 
@@ -7245,7 +7607,7 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
   uint64_t val;
   // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(7 <= SIMDJSON_PADDING);
+  static_assert(7 <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be bigger than 7");
   memcpy(&val, chars, 8);
   // a branchy method might be faster:
   // return (( val & 0xF0F0F0F0F0F0F0F0 ) == 0x3030303030303030)
@@ -7279,13 +7641,13 @@ never_inline bool parse_large_integer(const uint8_t *const src,
     ++p;
     i = 0;
   } else {
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     i = digit;
     p++;
     // the is_made_of_eight_digits_fast routine is unlikely to help here because
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       if (mul_overflow(i, 10, &i)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
         found_invalid_number(src);
@@ -7407,13 +7769,13 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
       return false;
     }
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     i = digit;
     p++;
     // the is_made_of_eight_digits_fast routine is unlikely to help here because
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       // a multiplication by 10 is cheaper than an arbitrary integer
       // multiplication
       i = 10 * i + digit; // might overflow, we will handle the overflow later
@@ -7431,7 +7793,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     ++p;
     const char *const first_after_period = p;
     if (is_integer(*p)) {
-      unsigned char digit = *p - '0';
+      unsigned char digit = static_cast<unsigned char>(*p - '0');
       ++p;
       i = i * 10 + digit; // might overflow + multiplication by 10 is likely
                           // cheaper than arbitrary mult.
@@ -7451,7 +7813,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     }
 #endif
     while (is_integer(*p)) {
-      unsigned char digit = *p - '0';
+      unsigned char digit = static_cast<unsigned char>(*p - '0');
       ++p;
       i = i * 10 + digit; // in rare cases, this will overflow, but that's ok
                           // because we have parse_highprecision_float later.
@@ -7459,7 +7821,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     exponent = first_after_period - p;
   }
   int digit_count =
-      p - start_digits - 1; // used later to guard against overflows
+      int(p - start_digits) - 1; // used later to guard against overflows
   int64_t exp_number = 0;   // exponential part
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
@@ -7477,16 +7839,16 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
       return false;
     }
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     exp_number = digit;
     p++;
     if (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
     if (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
@@ -7498,7 +7860,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
         return false;
       }
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
@@ -7516,7 +7878,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         start++;
       }
       // we over-decrement by one when there is a '.'
-      digit_count -= (start - start_digits);
+      digit_count -= int(start - start_digits);
       if (digit_count >= 19) {
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
@@ -7571,12 +7933,14 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 } // namespace numberparsing
 /* end file src/generic/numberparsing.h */
 
-} // namespace simdjson::arm64
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_NUMBERPARSING_H
 /* end file src/generic/numberparsing.h */
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
 /* begin file src/generic/atomparsing.h */
 namespace atomparsing {
@@ -7584,9 +7948,9 @@ namespace atomparsing {
 really_inline uint32_t string_to_uint32(const char* str) { return *reinterpret_cast<const uint32_t *>(str); }
 
 WARN_UNUSED
-really_inline bool str4ncmp(const uint8_t *src, const char* atom) {
+really_inline uint32_t str4ncmp(const uint8_t *src, const char* atom) {
   uint32_t srcval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
-  static_assert(sizeof(uint32_t) <= SIMDJSON_PADDING);
+  static_assert(sizeof(uint32_t) <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be larger than 4 bytes");
   std::memcpy(&srcval, src, sizeof(uint32_t));
   return srcval ^ string_to_uint32(atom);
 }
@@ -7682,7 +8046,11 @@ struct unified_machine_addresses {
 class structural_iterator {
 public:
   really_inline structural_iterator(const uint8_t* _buf, size_t _len, const uint32_t *_structural_indexes, size_t next_structural_index)
-    : buf{_buf}, len{_len}, structural_indexes{_structural_indexes}, next_structural{next_structural_index} {}
+    : buf{_buf},
+     len{_len},
+     structural_indexes{_structural_indexes},
+     next_structural{next_structural_index}
+    {}
   really_inline char advance_char() {
     idx = structural_indexes[next_structural];
     next_structural++;
@@ -7737,8 +8105,8 @@ public:
   const size_t len;
   const uint32_t* const structural_indexes;
   size_t next_structural; // next structural index
-  size_t idx; // location of the structural character in the input (buf)
-  uint8_t c;  // used to track the (structural) character we are looking at
+  size_t idx{0}; // location of the structural character in the input (buf)
+  uint8_t c{0};  // used to track the (structural) character we are looking at
 };
 
 struct structural_parser {
@@ -7881,7 +8249,7 @@ struct structural_parser {
     if (depth != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
-    if (doc_parser.containing_scope_offset[depth] != 0) {
+    if (doc_parser.containing_scope[depth].tape_index != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
 
@@ -7982,14 +8350,14 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], true);
       })
     );
@@ -8004,6 +8372,7 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
 object_begin:
   switch (parser.advance_char()) {
   case '"': {
+    doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
   }
@@ -8022,6 +8391,7 @@ object_key_state:
 object_continue:
   switch (parser.advance_char()) {
   case ',':
+    doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
     FAIL_IF( parser.advance_char() != '"' );
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
@@ -8043,6 +8413,7 @@ array_begin:
     parser.end_array();
     goto scope_end;
   }
+  doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
 
 main_array_switch:
   /* we call update char on all paths in, so we can peek at parser.c on the
@@ -8052,6 +8423,7 @@ main_array_switch:
 array_continue:
   switch (parser.advance_char()) {
   case ',':
+    doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
     parser.advance_char();
     goto main_array_switch;
   case ']':
@@ -8080,7 +8452,7 @@ WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, par
 namespace stage2 {
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, parser &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
+  really_inline streaming_structural_parser(const uint8_t *buf, size_t len, parser &_doc_parser, uint32_t next_structural) : structural_parser(buf, len, _doc_parser, next_structural) {}
 
   // override to add streaming
   WARN_UNUSED really_inline error_code start(UNUSED size_t len, ret_address finish_parser) {
@@ -8104,7 +8476,7 @@ struct streaming_structural_parser: structural_parser {
     if (depth != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
-    if (doc_parser.containing_scope_offset[depth] != 0) {
+    if (doc_parser.containing_scope[depth].tape_index != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
     bool finished = structurals.at_end(doc_parser.n_structural_indexes);
@@ -8120,7 +8492,7 @@ struct streaming_structural_parser: structural_parser {
  ***********/
 WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, parser &doc_parser, size_t &next_json) const noexcept {
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
-  stage2::streaming_structural_parser parser(buf, len, doc_parser, next_json);
+  stage2::streaming_structural_parser parser(buf, len, doc_parser, uint32_t(next_json));
   error_code result = parser.start(len, addresses.finish);
   if (result) { return result; }
   //
@@ -8142,14 +8514,14 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], true);
       })
     );
@@ -8176,6 +8548,7 @@ object_begin:
 
 object_key_parser:
   FAIL_IF( parser.advance_char() != ':' );
+  doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
   parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
@@ -8203,6 +8576,7 @@ array_begin:
     parser.end_array();
     goto scope_end;
   }
+  doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
 
 main_array_switch:
   /* we call update char on all paths in, so we can peek at parser.c on the
@@ -8212,6 +8586,7 @@ main_array_switch:
 array_continue:
   switch (parser.advance_char()) {
   case ',':
+    doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
     parser.advance_char();
     goto main_array_switch;
   case ']':
@@ -8230,7 +8605,8 @@ error:
 }
 /* end file src/generic/stage2_streaming_build_tape.h */
 
-} // namespace simdjson::arm64
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_STAGE2_BUILD_TAPE_H
 /* end file src/generic/stage2_streaming_build_tape.h */
@@ -8248,7 +8624,8 @@ error:
 
 /* jsoncharutils.h already included: #include "jsoncharutils.h" */
 
-namespace simdjson::fallback {
+namespace simdjson {
+namespace fallback {
 
 // Holds backslashes and quotes locations.
 struct backslash_and_quote {
@@ -8394,7 +8771,8 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
 } // namespace stringparsing
 /* end file src/generic/stringparsing.h */
 
-} // namespace simdjson::fallback
+} // namespace fallback
+} // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_STRINGPARSING_H
 /* end file src/generic/stringparsing.h */
@@ -8409,28 +8787,41 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
 
 #include <limits>
 
-namespace simdjson::fallback {
+namespace simdjson {
+namespace fallback {
 
-#ifndef _MSC_VER
+#if defined(_MSC_VER) && !defined(_M_ARM64) && !defined(_M_X64)
+static inline unsigned char _BitScanForward64(unsigned long* ret, uint64_t x) {
+  unsigned long x0 = (unsigned long)x, top, bottom;
+  _BitScanForward(&top, (unsigned long)(x >> 32));
+  _BitScanForward(&bottom, x0);
+  *ret = x0 ? bottom : 32 + top;
+  return x != 0;
+}
+static unsigned char _BitScanReverse64(unsigned long* ret, uint64_t x) {
+  unsigned long x1 = (unsigned long)(x >> 32), top, bottom;
+  _BitScanReverse(&top, x1);
+  _BitScanReverse(&bottom, (unsigned long)x);
+  *ret = x1 ? top + 32 : bottom;
+  return x != 0;
+}
+#endif
+
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
-// Sadly, sanitizers are not smart enough to figure it out. 
-__attribute__((no_sanitize("undefined"))) // this is deliberate
-#endif // _MSC_VER
-/* result might be undefined when input_num is zero */
+// Sadly, sanitizers are not smart enough to figure it out.
+NO_SANITIZE_UNDEFINED
 really_inline int trailing_zeroes(uint64_t input_num) {
-
 #ifdef _MSC_VER
   unsigned long ret;
   // Search the mask data from least significant bit (LSB) 
   // to the most significant bit (MSB) for a set bit (1).
   _BitScanForward64(&ret, input_num);
   return (int)ret;
-#else
+#else // _MSC_VER
   return __builtin_ctzll(input_num);
 #endif // _MSC_VER
-
-} // namespace simdjson::arm64
+}
 
 /* result might be undefined when input_num is zero */
 really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
@@ -8463,7 +8854,8 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *resu
   return value2 > 0 && value1 > std::numeric_limits<uint64_t>::max() / value2;
 }
 
-} // namespace simdjson::fallback
+} // namespace fallback
+} // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_BITMANIPULATION_H
 /* end file src/fallback/bitmanipulation.h */
@@ -8477,7 +8869,8 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf);
 void found_float(double result, const uint8_t *buf);
 #endif
 
-namespace simdjson::fallback {
+namespace simdjson {
+namespace fallback {
 static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   uint32_t result = 0;
   for (int i=0;i<8;i++) {
@@ -8507,7 +8900,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   if (-22 <= power && power <= 22 && i <= 9007199254740991) {
     // convert the integer into a double. This is lossless since
     // 0 <= i <= 2^53 - 1.
-    double d = i;
+    double d = double(i);
     //
     // The general idea is as follows.
     // If 0 <= s < 2^53 and if 10^0 <= p <= 10^22 then
@@ -8613,7 +9006,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   ///////
   uint64_t upperbit = upper >> 63;
   uint64_t mantissa = upper >> (upperbit + 9);
-  lz += 1 ^ upperbit;
+  lz += int(1 ^ upperbit);
 
   // Here we have mantissa < (1<<54).
 
@@ -8733,7 +9126,7 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
   uint64_t val;
   // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(7 <= SIMDJSON_PADDING);
+  static_assert(7 <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be bigger than 7");
   memcpy(&val, chars, 8);
   // a branchy method might be faster:
   // return (( val & 0xF0F0F0F0F0F0F0F0 ) == 0x3030303030303030)
@@ -8767,13 +9160,13 @@ never_inline bool parse_large_integer(const uint8_t *const src,
     ++p;
     i = 0;
   } else {
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     i = digit;
     p++;
     // the is_made_of_eight_digits_fast routine is unlikely to help here because
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       if (mul_overflow(i, 10, &i)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
         found_invalid_number(src);
@@ -8895,13 +9288,13 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
       return false;
     }
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     i = digit;
     p++;
     // the is_made_of_eight_digits_fast routine is unlikely to help here because
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       // a multiplication by 10 is cheaper than an arbitrary integer
       // multiplication
       i = 10 * i + digit; // might overflow, we will handle the overflow later
@@ -8919,7 +9312,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     ++p;
     const char *const first_after_period = p;
     if (is_integer(*p)) {
-      unsigned char digit = *p - '0';
+      unsigned char digit = static_cast<unsigned char>(*p - '0');
       ++p;
       i = i * 10 + digit; // might overflow + multiplication by 10 is likely
                           // cheaper than arbitrary mult.
@@ -8939,7 +9332,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     }
 #endif
     while (is_integer(*p)) {
-      unsigned char digit = *p - '0';
+      unsigned char digit = static_cast<unsigned char>(*p - '0');
       ++p;
       i = i * 10 + digit; // in rare cases, this will overflow, but that's ok
                           // because we have parse_highprecision_float later.
@@ -8947,7 +9340,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     exponent = first_after_period - p;
   }
   int digit_count =
-      p - start_digits - 1; // used later to guard against overflows
+      int(p - start_digits) - 1; // used later to guard against overflows
   int64_t exp_number = 0;   // exponential part
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
@@ -8965,16 +9358,16 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
       return false;
     }
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     exp_number = digit;
     p++;
     if (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
     if (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
@@ -8986,7 +9379,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
         return false;
       }
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
@@ -9004,7 +9397,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         start++;
       }
       // we over-decrement by one when there is a '.'
-      digit_count -= (start - start_digits);
+      digit_count -= int(start - start_digits);
       if (digit_count >= 19) {
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
@@ -9059,12 +9452,15 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 } // namespace numberparsing
 /* end file src/generic/numberparsing.h */
 
-} // namespace simdjson::fallback
+} // namespace fallback
+
+} // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_NUMBERPARSING_H
 /* end file src/generic/numberparsing.h */
 
-namespace simdjson::fallback {
+namespace simdjson {
+namespace fallback {
 
 /* begin file src/generic/atomparsing.h */
 namespace atomparsing {
@@ -9072,9 +9468,9 @@ namespace atomparsing {
 really_inline uint32_t string_to_uint32(const char* str) { return *reinterpret_cast<const uint32_t *>(str); }
 
 WARN_UNUSED
-really_inline bool str4ncmp(const uint8_t *src, const char* atom) {
+really_inline uint32_t str4ncmp(const uint8_t *src, const char* atom) {
   uint32_t srcval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
-  static_assert(sizeof(uint32_t) <= SIMDJSON_PADDING);
+  static_assert(sizeof(uint32_t) <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be larger than 4 bytes");
   std::memcpy(&srcval, src, sizeof(uint32_t));
   return srcval ^ string_to_uint32(atom);
 }
@@ -9170,7 +9566,11 @@ struct unified_machine_addresses {
 class structural_iterator {
 public:
   really_inline structural_iterator(const uint8_t* _buf, size_t _len, const uint32_t *_structural_indexes, size_t next_structural_index)
-    : buf{_buf}, len{_len}, structural_indexes{_structural_indexes}, next_structural{next_structural_index} {}
+    : buf{_buf},
+     len{_len},
+     structural_indexes{_structural_indexes},
+     next_structural{next_structural_index}
+    {}
   really_inline char advance_char() {
     idx = structural_indexes[next_structural];
     next_structural++;
@@ -9225,8 +9625,8 @@ public:
   const size_t len;
   const uint32_t* const structural_indexes;
   size_t next_structural; // next structural index
-  size_t idx; // location of the structural character in the input (buf)
-  uint8_t c;  // used to track the (structural) character we are looking at
+  size_t idx{0}; // location of the structural character in the input (buf)
+  uint8_t c{0};  // used to track the (structural) character we are looking at
 };
 
 struct structural_parser {
@@ -9369,7 +9769,7 @@ struct structural_parser {
     if (depth != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
-    if (doc_parser.containing_scope_offset[depth] != 0) {
+    if (doc_parser.containing_scope[depth].tape_index != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
 
@@ -9470,14 +9870,14 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], true);
       })
     );
@@ -9492,6 +9892,7 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
 object_begin:
   switch (parser.advance_char()) {
   case '"': {
+    doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
   }
@@ -9510,6 +9911,7 @@ object_key_state:
 object_continue:
   switch (parser.advance_char()) {
   case ',':
+    doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
     FAIL_IF( parser.advance_char() != '"' );
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
@@ -9531,6 +9933,7 @@ array_begin:
     parser.end_array();
     goto scope_end;
   }
+  doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
 
 main_array_switch:
   /* we call update char on all paths in, so we can peek at parser.c on the
@@ -9540,6 +9943,7 @@ main_array_switch:
 array_continue:
   switch (parser.advance_char()) {
   case ',':
+    doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
     parser.advance_char();
     goto main_array_switch;
   case ']':
@@ -9568,7 +9972,7 @@ WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, par
 namespace stage2 {
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, parser &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
+  really_inline streaming_structural_parser(const uint8_t *buf, size_t len, parser &_doc_parser, uint32_t next_structural) : structural_parser(buf, len, _doc_parser, next_structural) {}
 
   // override to add streaming
   WARN_UNUSED really_inline error_code start(UNUSED size_t len, ret_address finish_parser) {
@@ -9592,7 +9996,7 @@ struct streaming_structural_parser: structural_parser {
     if (depth != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
-    if (doc_parser.containing_scope_offset[depth] != 0) {
+    if (doc_parser.containing_scope[depth].tape_index != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
     bool finished = structurals.at_end(doc_parser.n_structural_indexes);
@@ -9608,7 +10012,7 @@ struct streaming_structural_parser: structural_parser {
  ***********/
 WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, parser &doc_parser, size_t &next_json) const noexcept {
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
-  stage2::streaming_structural_parser parser(buf, len, doc_parser, next_json);
+  stage2::streaming_structural_parser parser(buf, len, doc_parser, uint32_t(next_json));
   error_code result = parser.start(len, addresses.finish);
   if (result) { return result; }
   //
@@ -9630,14 +10034,14 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], true);
       })
     );
@@ -9664,6 +10068,7 @@ object_begin:
 
 object_key_parser:
   FAIL_IF( parser.advance_char() != ':' );
+  doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
   parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
@@ -9691,6 +10096,7 @@ array_begin:
     parser.end_array();
     goto scope_end;
   }
+  doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
 
 main_array_switch:
   /* we call update char on all paths in, so we can peek at parser.c on the
@@ -9700,6 +10106,7 @@ main_array_switch:
 array_continue:
   switch (parser.advance_char()) {
   case ',':
+    doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
     parser.advance_char();
     goto main_array_switch;
   case ']':
@@ -9718,6 +10125,7 @@ error:
 }
 /* end file src/generic/stage2_streaming_build_tape.h */
 
+} // namespace fallback
 } // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_STAGE2_BUILD_TAPE_H
@@ -9739,7 +10147,8 @@ error:
 /* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
 
 TARGET_HASWELL
-namespace simdjson::haswell {
+namespace simdjson {
+namespace haswell {
 
 using namespace simd;
 
@@ -9761,7 +10170,7 @@ public:
 really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 15 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1));
+  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "backslash and quote finder must process fewer than SIMDJSON_PADDING bytes");
   simd8<uint8_t> v(src);
   // store to dest unconditionally - we can overwrite the bits we don't like later
   v.store(dst);
@@ -9895,7 +10304,8 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
 } // namespace stringparsing
 /* end file src/generic/stringparsing.h */
 
-} // namespace simdjson::haswell
+} // namespace haswell
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_STRINGPARSING_H
@@ -9919,7 +10329,8 @@ void found_float(double result, const uint8_t *buf);
 #endif
 
 TARGET_HASWELL
-namespace simdjson::haswell {
+namespace simdjson {
+namespace haswell {
 static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   // this actually computes *16* values so we are being wasteful.
   const __m128i ascii0 = _mm_set1_epi8('0');
@@ -9959,7 +10370,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   if (-22 <= power && power <= 22 && i <= 9007199254740991) {
     // convert the integer into a double. This is lossless since
     // 0 <= i <= 2^53 - 1.
-    double d = i;
+    double d = double(i);
     //
     // The general idea is as follows.
     // If 0 <= s < 2^53 and if 10^0 <= p <= 10^22 then
@@ -10065,7 +10476,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   ///////
   uint64_t upperbit = upper >> 63;
   uint64_t mantissa = upper >> (upperbit + 9);
-  lz += 1 ^ upperbit;
+  lz += int(1 ^ upperbit);
 
   // Here we have mantissa < (1<<54).
 
@@ -10185,7 +10596,7 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
   uint64_t val;
   // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(7 <= SIMDJSON_PADDING);
+  static_assert(7 <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be bigger than 7");
   memcpy(&val, chars, 8);
   // a branchy method might be faster:
   // return (( val & 0xF0F0F0F0F0F0F0F0 ) == 0x3030303030303030)
@@ -10219,13 +10630,13 @@ never_inline bool parse_large_integer(const uint8_t *const src,
     ++p;
     i = 0;
   } else {
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     i = digit;
     p++;
     // the is_made_of_eight_digits_fast routine is unlikely to help here because
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       if (mul_overflow(i, 10, &i)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
         found_invalid_number(src);
@@ -10347,13 +10758,13 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
       return false;
     }
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     i = digit;
     p++;
     // the is_made_of_eight_digits_fast routine is unlikely to help here because
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       // a multiplication by 10 is cheaper than an arbitrary integer
       // multiplication
       i = 10 * i + digit; // might overflow, we will handle the overflow later
@@ -10371,7 +10782,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     ++p;
     const char *const first_after_period = p;
     if (is_integer(*p)) {
-      unsigned char digit = *p - '0';
+      unsigned char digit = static_cast<unsigned char>(*p - '0');
       ++p;
       i = i * 10 + digit; // might overflow + multiplication by 10 is likely
                           // cheaper than arbitrary mult.
@@ -10391,7 +10802,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     }
 #endif
     while (is_integer(*p)) {
-      unsigned char digit = *p - '0';
+      unsigned char digit = static_cast<unsigned char>(*p - '0');
       ++p;
       i = i * 10 + digit; // in rare cases, this will overflow, but that's ok
                           // because we have parse_highprecision_float later.
@@ -10399,7 +10810,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     exponent = first_after_period - p;
   }
   int digit_count =
-      p - start_digits - 1; // used later to guard against overflows
+      int(p - start_digits) - 1; // used later to guard against overflows
   int64_t exp_number = 0;   // exponential part
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
@@ -10417,16 +10828,16 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
       return false;
     }
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     exp_number = digit;
     p++;
     if (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
     if (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
@@ -10438,7 +10849,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
         return false;
       }
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
@@ -10456,7 +10867,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         start++;
       }
       // we over-decrement by one when there is a '.'
-      digit_count -= (start - start_digits);
+      digit_count -= int(start - start_digits);
       if (digit_count >= 19) {
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
@@ -10511,14 +10922,17 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 } // namespace numberparsing
 /* end file src/generic/numberparsing.h */
 
-} // namespace simdjson::haswell
+} // namespace haswell
+
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_NUMBERPARSING_H
 /* end file src/generic/numberparsing.h */
 
 TARGET_HASWELL
-namespace simdjson::haswell {
+namespace simdjson {
+namespace haswell {
 
 /* begin file src/generic/atomparsing.h */
 namespace atomparsing {
@@ -10526,9 +10940,9 @@ namespace atomparsing {
 really_inline uint32_t string_to_uint32(const char* str) { return *reinterpret_cast<const uint32_t *>(str); }
 
 WARN_UNUSED
-really_inline bool str4ncmp(const uint8_t *src, const char* atom) {
+really_inline uint32_t str4ncmp(const uint8_t *src, const char* atom) {
   uint32_t srcval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
-  static_assert(sizeof(uint32_t) <= SIMDJSON_PADDING);
+  static_assert(sizeof(uint32_t) <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be larger than 4 bytes");
   std::memcpy(&srcval, src, sizeof(uint32_t));
   return srcval ^ string_to_uint32(atom);
 }
@@ -10624,7 +11038,11 @@ struct unified_machine_addresses {
 class structural_iterator {
 public:
   really_inline structural_iterator(const uint8_t* _buf, size_t _len, const uint32_t *_structural_indexes, size_t next_structural_index)
-    : buf{_buf}, len{_len}, structural_indexes{_structural_indexes}, next_structural{next_structural_index} {}
+    : buf{_buf},
+     len{_len},
+     structural_indexes{_structural_indexes},
+     next_structural{next_structural_index}
+    {}
   really_inline char advance_char() {
     idx = structural_indexes[next_structural];
     next_structural++;
@@ -10679,8 +11097,8 @@ public:
   const size_t len;
   const uint32_t* const structural_indexes;
   size_t next_structural; // next structural index
-  size_t idx; // location of the structural character in the input (buf)
-  uint8_t c;  // used to track the (structural) character we are looking at
+  size_t idx{0}; // location of the structural character in the input (buf)
+  uint8_t c{0};  // used to track the (structural) character we are looking at
 };
 
 struct structural_parser {
@@ -10823,7 +11241,7 @@ struct structural_parser {
     if (depth != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
-    if (doc_parser.containing_scope_offset[depth] != 0) {
+    if (doc_parser.containing_scope[depth].tape_index != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
 
@@ -10924,14 +11342,14 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], true);
       })
     );
@@ -10946,6 +11364,7 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
 object_begin:
   switch (parser.advance_char()) {
   case '"': {
+    doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
   }
@@ -10964,6 +11383,7 @@ object_key_state:
 object_continue:
   switch (parser.advance_char()) {
   case ',':
+    doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
     FAIL_IF( parser.advance_char() != '"' );
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
@@ -10985,6 +11405,7 @@ array_begin:
     parser.end_array();
     goto scope_end;
   }
+  doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
 
 main_array_switch:
   /* we call update char on all paths in, so we can peek at parser.c on the
@@ -10994,6 +11415,7 @@ main_array_switch:
 array_continue:
   switch (parser.advance_char()) {
   case ',':
+    doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
     parser.advance_char();
     goto main_array_switch;
   case ']':
@@ -11022,7 +11444,7 @@ WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, par
 namespace stage2 {
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, parser &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
+  really_inline streaming_structural_parser(const uint8_t *buf, size_t len, parser &_doc_parser, uint32_t next_structural) : structural_parser(buf, len, _doc_parser, next_structural) {}
 
   // override to add streaming
   WARN_UNUSED really_inline error_code start(UNUSED size_t len, ret_address finish_parser) {
@@ -11046,7 +11468,7 @@ struct streaming_structural_parser: structural_parser {
     if (depth != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
-    if (doc_parser.containing_scope_offset[depth] != 0) {
+    if (doc_parser.containing_scope[depth].tape_index != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
     bool finished = structurals.at_end(doc_parser.n_structural_indexes);
@@ -11062,7 +11484,7 @@ struct streaming_structural_parser: structural_parser {
  ***********/
 WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, parser &doc_parser, size_t &next_json) const noexcept {
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
-  stage2::streaming_structural_parser parser(buf, len, doc_parser, next_json);
+  stage2::streaming_structural_parser parser(buf, len, doc_parser, uint32_t(next_json));
   error_code result = parser.start(len, addresses.finish);
   if (result) { return result; }
   //
@@ -11084,14 +11506,14 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], true);
       })
     );
@@ -11118,6 +11540,7 @@ object_begin:
 
 object_key_parser:
   FAIL_IF( parser.advance_char() != ':' );
+  doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
   parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
@@ -11145,6 +11568,7 @@ array_begin:
     parser.end_array();
     goto scope_end;
   }
+  doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
 
 main_array_switch:
   /* we call update char on all paths in, so we can peek at parser.c on the
@@ -11154,6 +11578,7 @@ main_array_switch:
 array_continue:
   switch (parser.advance_char()) {
   case ',':
+    doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
     parser.advance_char();
     goto main_array_switch;
   case ']':
@@ -11172,6 +11597,7 @@ error:
 }
 /* end file src/generic/stage2_streaming_build_tape.h */
 
+} // namespace haswell
 } // namespace simdjson
 UNTARGET_REGION
 
@@ -11194,7 +11620,8 @@ UNTARGET_REGION
 /* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
 
 TARGET_WESTMERE
-namespace simdjson::westmere {
+namespace simdjson {
+namespace westmere {
 
 using namespace simd;
 
@@ -11216,15 +11643,15 @@ public:
 really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1));
+  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "backslash and quote finder must process fewer than SIMDJSON_PADDING bytes");
   simd8<uint8_t> v0(src);
   simd8<uint8_t> v1(src + 16);
   v0.store(dst);
   v1.store(dst + 16);
   uint64_t bs_and_quote = simd8x64<bool>(v0 == '\\', v1 == '\\', v0 == '"', v1 == '"').to_bitmask();
   return {
-    static_cast<uint32_t>(bs_and_quote),      // bs_bits
-    static_cast<uint32_t>(bs_and_quote >> 32) // quote_bits
+    uint32_t(bs_and_quote),      // bs_bits
+    uint32_t(bs_and_quote >> 32) // quote_bits
   };
 }
 
@@ -11352,7 +11779,8 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
 } // namespace stringparsing
 /* end file src/generic/stringparsing.h */
 
-} // namespace simdjson::westmere
+} // namespace westmere
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_STRINGPARSING_H
@@ -11377,7 +11805,8 @@ void found_float(double result, const uint8_t *buf);
 
 
 TARGET_WESTMERE
-namespace simdjson::westmere {
+namespace simdjson {
+namespace westmere {
 static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   // this actually computes *16* values so we are being wasteful.
   const __m128i ascii0 = _mm_set1_epi8('0');
@@ -11417,7 +11846,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   if (-22 <= power && power <= 22 && i <= 9007199254740991) {
     // convert the integer into a double. This is lossless since
     // 0 <= i <= 2^53 - 1.
-    double d = i;
+    double d = double(i);
     //
     // The general idea is as follows.
     // If 0 <= s < 2^53 and if 10^0 <= p <= 10^22 then
@@ -11523,7 +11952,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   ///////
   uint64_t upperbit = upper >> 63;
   uint64_t mantissa = upper >> (upperbit + 9);
-  lz += 1 ^ upperbit;
+  lz += int(1 ^ upperbit);
 
   // Here we have mantissa < (1<<54).
 
@@ -11643,7 +12072,7 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
   uint64_t val;
   // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(7 <= SIMDJSON_PADDING);
+  static_assert(7 <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be bigger than 7");
   memcpy(&val, chars, 8);
   // a branchy method might be faster:
   // return (( val & 0xF0F0F0F0F0F0F0F0 ) == 0x3030303030303030)
@@ -11677,13 +12106,13 @@ never_inline bool parse_large_integer(const uint8_t *const src,
     ++p;
     i = 0;
   } else {
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     i = digit;
     p++;
     // the is_made_of_eight_digits_fast routine is unlikely to help here because
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       if (mul_overflow(i, 10, &i)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
         found_invalid_number(src);
@@ -11805,13 +12234,13 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
       return false;
     }
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     i = digit;
     p++;
     // the is_made_of_eight_digits_fast routine is unlikely to help here because
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       // a multiplication by 10 is cheaper than an arbitrary integer
       // multiplication
       i = 10 * i + digit; // might overflow, we will handle the overflow later
@@ -11829,7 +12258,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     ++p;
     const char *const first_after_period = p;
     if (is_integer(*p)) {
-      unsigned char digit = *p - '0';
+      unsigned char digit = static_cast<unsigned char>(*p - '0');
       ++p;
       i = i * 10 + digit; // might overflow + multiplication by 10 is likely
                           // cheaper than arbitrary mult.
@@ -11849,7 +12278,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     }
 #endif
     while (is_integer(*p)) {
-      unsigned char digit = *p - '0';
+      unsigned char digit = static_cast<unsigned char>(*p - '0');
       ++p;
       i = i * 10 + digit; // in rare cases, this will overflow, but that's ok
                           // because we have parse_highprecision_float later.
@@ -11857,7 +12286,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     exponent = first_after_period - p;
   }
   int digit_count =
-      p - start_digits - 1; // used later to guard against overflows
+      int(p - start_digits) - 1; // used later to guard against overflows
   int64_t exp_number = 0;   // exponential part
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
@@ -11875,16 +12304,16 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
       return false;
     }
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     exp_number = digit;
     p++;
     if (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
     if (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
@@ -11896,7 +12325,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
         return false;
       }
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
@@ -11914,7 +12343,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         start++;
       }
       // we over-decrement by one when there is a '.'
-      digit_count -= (start - start_digits);
+      digit_count -= int(start - start_digits);
       if (digit_count >= 19) {
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
@@ -11969,14 +12398,17 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 } // namespace numberparsing
 /* end file src/generic/numberparsing.h */
 
-} // namespace simdjson::westmere
+} // namespace westmere
+
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif //  SIMDJSON_WESTMERE_NUMBERPARSING_H
 /* end file src/generic/numberparsing.h */
 
 TARGET_WESTMERE
-namespace simdjson::westmere {
+namespace simdjson {
+namespace westmere {
 
 /* begin file src/generic/atomparsing.h */
 namespace atomparsing {
@@ -11984,9 +12416,9 @@ namespace atomparsing {
 really_inline uint32_t string_to_uint32(const char* str) { return *reinterpret_cast<const uint32_t *>(str); }
 
 WARN_UNUSED
-really_inline bool str4ncmp(const uint8_t *src, const char* atom) {
+really_inline uint32_t str4ncmp(const uint8_t *src, const char* atom) {
   uint32_t srcval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
-  static_assert(sizeof(uint32_t) <= SIMDJSON_PADDING);
+  static_assert(sizeof(uint32_t) <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be larger than 4 bytes");
   std::memcpy(&srcval, src, sizeof(uint32_t));
   return srcval ^ string_to_uint32(atom);
 }
@@ -12082,7 +12514,11 @@ struct unified_machine_addresses {
 class structural_iterator {
 public:
   really_inline structural_iterator(const uint8_t* _buf, size_t _len, const uint32_t *_structural_indexes, size_t next_structural_index)
-    : buf{_buf}, len{_len}, structural_indexes{_structural_indexes}, next_structural{next_structural_index} {}
+    : buf{_buf},
+     len{_len},
+     structural_indexes{_structural_indexes},
+     next_structural{next_structural_index}
+    {}
   really_inline char advance_char() {
     idx = structural_indexes[next_structural];
     next_structural++;
@@ -12137,8 +12573,8 @@ public:
   const size_t len;
   const uint32_t* const structural_indexes;
   size_t next_structural; // next structural index
-  size_t idx; // location of the structural character in the input (buf)
-  uint8_t c;  // used to track the (structural) character we are looking at
+  size_t idx{0}; // location of the structural character in the input (buf)
+  uint8_t c{0};  // used to track the (structural) character we are looking at
 };
 
 struct structural_parser {
@@ -12281,7 +12717,7 @@ struct structural_parser {
     if (depth != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
-    if (doc_parser.containing_scope_offset[depth] != 0) {
+    if (doc_parser.containing_scope[depth].tape_index != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
 
@@ -12382,14 +12818,14 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], true);
       })
     );
@@ -12404,6 +12840,7 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
 object_begin:
   switch (parser.advance_char()) {
   case '"': {
+    doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
   }
@@ -12422,6 +12859,7 @@ object_key_state:
 object_continue:
   switch (parser.advance_char()) {
   case ',':
+    doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
     FAIL_IF( parser.advance_char() != '"' );
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
@@ -12443,6 +12881,7 @@ array_begin:
     parser.end_array();
     goto scope_end;
   }
+  doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
 
 main_array_switch:
   /* we call update char on all paths in, so we can peek at parser.c on the
@@ -12452,6 +12891,7 @@ main_array_switch:
 array_continue:
   switch (parser.advance_char()) {
   case ',':
+    doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
     parser.advance_char();
     goto main_array_switch;
   case ']':
@@ -12480,7 +12920,7 @@ WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, par
 namespace stage2 {
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, parser &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
+  really_inline streaming_structural_parser(const uint8_t *buf, size_t len, parser &_doc_parser, uint32_t next_structural) : structural_parser(buf, len, _doc_parser, next_structural) {}
 
   // override to add streaming
   WARN_UNUSED really_inline error_code start(UNUSED size_t len, ret_address finish_parser) {
@@ -12504,7 +12944,7 @@ struct streaming_structural_parser: structural_parser {
     if (depth != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
-    if (doc_parser.containing_scope_offset[depth] != 0) {
+    if (doc_parser.containing_scope[depth].tape_index != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
     bool finished = structurals.at_end(doc_parser.n_structural_indexes);
@@ -12520,7 +12960,7 @@ struct streaming_structural_parser: structural_parser {
  ***********/
 WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, parser &doc_parser, size_t &next_json) const noexcept {
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
-  stage2::streaming_structural_parser parser(buf, len, doc_parser, next_json);
+  stage2::streaming_structural_parser parser(buf, len, doc_parser, uint32_t(next_json));
   error_code result = parser.start(len, addresses.finish);
   if (result) { return result; }
   //
@@ -12542,14 +12982,14 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], true);
       })
     );
@@ -12576,6 +13016,7 @@ object_begin:
 
 object_key_parser:
   FAIL_IF( parser.advance_char() != ':' );
+  doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
   parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
@@ -12603,6 +13044,7 @@ array_begin:
     parser.end_array();
     goto scope_end;
   }
+  doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
 
 main_array_switch:
   /* we call update char on all paths in, so we can peek at parser.c on the
@@ -12612,6 +13054,7 @@ main_array_switch:
 array_continue:
   switch (parser.advance_char()) {
   case ',':
+    doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
     parser.advance_char();
     goto main_array_switch;
   case ']':
@@ -12630,10 +13073,13 @@ error:
 }
 /* end file src/generic/stage2_streaming_build_tape.h */
 
-} // namespace simdjson::westmere
+} // namespace westmere
+} // namespace simdjson
 UNTARGET_REGION
 #endif // SIMDJSON_WESTMERE_STAGE2_BUILD_TAPE_H
 /* end file src/generic/stage2_streaming_build_tape.h */
 #endif
 /* end file src/generic/stage2_streaming_build_tape.h */
+
+SIMDJSON_POP_DISABLE_WARNINGS
 /* end file src/generic/stage2_streaming_build_tape.h */
