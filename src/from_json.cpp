@@ -8,8 +8,6 @@ SEXP rcpp_from_json( std::string json, bool simplify, bool fill_na ) {
   simdjson::dom::parser parser;
   simdjson::dom::element doc = parser.parse( json );
   
-  simdjson::dom::element_type t = doc.type();
-
   if( doc.is< bool >() ) {
     Rcpp::LogicalVector x(1);
     x[0] = doc.get< bool >();
@@ -35,6 +33,7 @@ SEXP rcpp_from_json( std::string json, bool simplify, bool fill_na ) {
     x[0] = st;
     return x;
   }
+  
   // TODO:
   // simdjson::dom::element_type::UINT64
 

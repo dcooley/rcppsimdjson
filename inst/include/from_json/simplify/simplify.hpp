@@ -9,7 +9,9 @@ namespace from_json {
     R_xlen_t x_size = x.size();
     R_xlen_t counter = 0;
     
-    R_xlen_t vec_length = x_size* n;
+    R_xlen_t vec_length = x_size * n;
+    
+    Rcpp::Rcout << "simplify vector to " << r_type << std::endl;
     
     // each list element MUST be length n
     for( i = 0; i < x_size; ++i ) {
@@ -35,7 +37,7 @@ namespace from_json {
         Rcpp::IntegerVector this_vec = x[ counter ];
         std::copy( this_vec.begin(), this_vec.end(), iv.begin() + i );
       }
-      
+      Rcpp::Rcout << "iv: " << iv << std::endl;
       return iv;
     }
     case REALSXP: {
@@ -147,6 +149,7 @@ inline SEXP simplify_matrix(
 ) {
   
   R_xlen_t i, j;
+  Rcpp::Rcout << "simplify matrix to " << r_type << std::endl;
   
   switch( r_type ) {
   case INTSXP: {
@@ -170,6 +173,7 @@ inline SEXP simplify_matrix(
         mat( i, j ) = this_val;
       }
     }
+    Rcpp::Rcout << "mat: " << mat << std::endl;
     return mat;
     // }
   }

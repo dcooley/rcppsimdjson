@@ -24,13 +24,17 @@ inline R_xlen_t where_is(
   return -1;
 }
 
+  // get_dtyles - different implementation to jsonify
   // interate over json object and get the unique data types of each value
   inline std::unordered_set< simdjson::dom::element_type > get_dtypes( simdjson::dom::array& arr ) {
     std::unordered_set< simdjson::dom::element_type > dtypes;
     
+    //Rcpp::Rcout << "getting d types " << std::endl;
+    
     R_xlen_t doc_len = arr.size();
     R_xlen_t i;
     for( i = 0; i < doc_len; ++i ) {
+      Rcpp::Rcout << "curr_dtype " <<  arr.at(i).type() << std::endl;
       dtypes.insert( arr.at(i).type() );
     }
     return dtypes;
@@ -38,31 +42,39 @@ inline R_xlen_t where_is(
   
   inline std::unordered_set< simdjson::dom::element_type > get_dtypes( simdjson::dom::object& obj ) {
     std::unordered_set< simdjson::dom::element_type > dtypes;
+
+    //Rcpp::Rcout << "getting d types " << std::endl;
     
-    R_xlen_t doc_len = obj.size();
     for ( auto key_value : obj ) {
+      Rcpp::Rcout << "curr_dtype " << key_value.value.type() << std::endl;
       dtypes.insert( key_value.value.type() );
     }
     return dtypes;
   }
   
-  inline std::unordered_set< simdjson::dom::element_type > get_dtypes( simdjson::dom::element& doc ) {
-    switch( doc.type() ) {
-    case simdjson::dom::element_type::OBJECT: {
-      simdjson::dom::object obj = doc.get< simdjson::dom::object >();
-      return get_dtypes( obj );
-    }
-    case simdjson::dom::element_type::ARRAY: {
-      simdjson::dom::array arr = doc.get< simdjson::dom::array >();
-      return get_dtypes( arr );
-    }
-    default: {
-      Rcpp::stop("RcppSimdJson - invalid type" );
-    }
-    }
-    std::unordered_set< simdjson::dom::element_type > t;
-    return t;
-  }
+  // inline std::unordered_set< simdjson::dom::element_type > get_dtypes( simdjson::dom::element& doc ) {
+  //   
+  //   Rcpp::Rcout << "getting d types " << std::endl;
+  //   
+  //   // iff it's an array or object, just need that type, no need to recurse into it.
+  //   
+  //   
+  //   switch( doc.type() ) {
+  //   case simdjson::dom::element_type::OBJECT: {
+  //     // simdjson::dom::object obj = doc.get< simdjson::dom::object >();
+  //     // return get_dtypes( obj );
+  //   }
+  //   case simdjson::dom::element_type::ARRAY: {
+  //     // simdjson::dom::array arr = doc.get< simdjson::dom::array >();
+  //     // return get_dtypes( arr );
+  //   }
+  //   default: {
+  //     Rcpp::stop("RcppSimdJson - invalid type" );
+  //   }
+  //   }
+  //   std::unordered_set< simdjson::dom::element_type > t;
+  //   return t;
+  // }
   
   
   inline bool contains_array( std::unordered_set< simdjson::dom::element_type >& dtypes ) {

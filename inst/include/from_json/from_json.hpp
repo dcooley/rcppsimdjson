@@ -17,6 +17,8 @@ namespace from_json {
       R_xlen_t& sequential_array_counter
   ) {
     
+    //Rcpp::Rcout << "start array counter: " << sequential_array_counter << std::endl;
+     
     Rcpp::List res(1);
     
     simdjson::dom::element_type json_type = doc.type();
@@ -30,6 +32,13 @@ namespace from_json {
       simdjson::dom::object obj = doc.get< simdjson::dom::object >();
       json_length = obj.size();
       
+      if( json_length == 0 ) {
+        return R_NilValue;
+      }
+      
+      // different to jsonify
+      dtypes = ::rcppsimdjson::from_json::get_dtypes( obj );
+      
       Rcpp::List out( json_length );
       Rcpp::CharacterVector names( json_length );
       
@@ -37,7 +46,6 @@ namespace from_json {
       for( const auto& key_value : obj ) {
         std::string_view n = key_value.key;
         names[i] = std::string( n ).c_str();
-        // Rcpp::Rcout << "names: " << names << std::endl;
         
         switch( key_value.value.type() ) {
         case simdjson::dom::element_type::BOOL: {
@@ -48,6 +56,7 @@ namespace from_json {
           
         case simdjson::dom::element_type::INT64: {
           int64_t x = key_value.value.get< int64_t >();
+          //Rcpp::Rcout<< "x: " << x << std::endl;
           out[i] = x;
           break;
         }
@@ -55,6 +64,12 @@ namespace from_json {
         case simdjson::dom::element_type::DOUBLE: {
           double x = key_value.value.get< double >();
           out[i] = x;
+          break;
+        }
+          
+        case simdjson::dom::element_type::STRING: {
+          std::string_view s = key_value.value.get< std::string_view >();
+          out[i] = std::string( s ).c_str();
           break;
         }
           
@@ -93,6 +108,11 @@ namespace from_json {
       json_length = arr.size();
       dtypes = ::rcppsimdjson::from_json::get_dtypes( arr );
       
+      if( json_length == 0 ) {
+        // array goes to list
+        return Rcpp::List::create();
+      }
+      
       if( !::rcppsimdjson::from_json::contains_object_or_array( dtypes ) ) {
         // array of scalars (no internal arrays or objects) 
         // can go straight to a vector
@@ -122,6 +142,7 @@ namespace from_json {
           case simdjson::dom::element_type::INT64: {
             sequential_array_counter = 0;
             int64_t x = arr.at(i).get< int64_t >();
+            //Rcpp::Rcout<< "x: " << x << std::endl;
             array_of_array[i] = x;
             break;
           }
@@ -133,7 +154,15 @@ namespace from_json {
             break;
           }
             
+          case simdjson::dom::element_type::STRING: {
+            sequential_array_counter = 0;
+            std::string_view x = arr.at(i).get< std::string_view >();
+            array_of_array[i] = std::string( x ).c_str();
+            break;
+          }
+            
           case simdjson::dom::element_type::ARRAY: {
+            //cpp::Rcout << "is array " << std::endl;
             simdjson::dom::element inner_arr = arr.at(i);
             array_of_array[i] = json_to_sexp( inner_arr, simplify, fill_na, sequential_array_counter );
             sequential_array_counter++;
@@ -154,16 +183,19 @@ namespace from_json {
           } // switch
         } // for
         
+        // Rcpp::Rcout << "array_counter " << sequential_array_counter << std::endl;
+        
         if( sequential_array_counter > 0 && simplify ) {
+          // Rcpp::Rcout << "list_to_matrix" << std::endl;
           res[0] = ::rcppsimdjson::from_json::list_to_matrix( array_of_array );
-           
-        } else if ( ::rcppsimdjson::from_json::contains_object( dtypes ) && dtypes.size() == 1 && !::rcppsimdjson::from_json::contains_array( dtypes ) && simplify ) {
+          sequential_array_counter = 0;  // different to jsonify
           
+        } else if ( ::rcppsimdjson::from_json::contains_object( dtypes ) && dtypes.size() == 1 && !::rcppsimdjson::from_json::contains_array( dtypes ) && simplify ) {
+          // Rcpp::Rcout << "here" << std::endl;
           if( fill_na ) {
-            Rcpp::Rcout << "simplify_data_frame_fill_na" << std::endl;
             res[0] = ::rcppsimdjson::from_json::simplify_dataframe_fill_na( array_of_array, json_length );
           } else {
-            Rcpp::Rcout << "simplify_dataframe" << std::endl;
+            // Rcpp::Rcout << "simplify df " << std::endl;
             res[0] = ::rcppsimdjson::from_json::simplify_dataframe( array_of_array, json_length );
           }
           
