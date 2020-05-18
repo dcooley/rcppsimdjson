@@ -56,7 +56,7 @@ namespace from_json {
           
         case simdjson::dom::element_type::INT64: {
           int64_t x = key_value.value.get< int64_t >();
-          //Rcpp::Rcout<< "x: " << x << std::endl;
+          // Rcpp::Rcout << "x: " << x << std::endl;
           out[i] = x;
           break;
         }

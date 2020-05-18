@@ -305,3 +305,4 @@ df <- structure(list(fill_colour = structure(c(68, 49, 53, 253, 1,
 js <- jsonify::to_json( df )
 res <- from_json( js )
 expect_equal( res, df )
+

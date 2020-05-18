@@ -11,7 +11,7 @@ namespace from_json {
     
     R_xlen_t vec_length = x_size * n;
     
-    Rcpp::Rcout << "simplify vector to " << r_type << std::endl;
+    // Rcpp::Rcout << "simplify vector to " << r_type << std::endl;
     
     // each list element MUST be length n
     for( i = 0; i < x_size; ++i ) {
@@ -37,7 +37,7 @@ namespace from_json {
         Rcpp::IntegerVector this_vec = x[ counter ];
         std::copy( this_vec.begin(), this_vec.end(), iv.begin() + i );
       }
-      Rcpp::Rcout << "iv: " << iv << std::endl;
+      // Rcpp::Rcout << "iv: " << iv << std::endl;
       return iv;
     }
     case REALSXP: {
@@ -80,6 +80,8 @@ namespace from_json {
     R_xlen_t arr_len = array.size();
     R_xlen_t i;
     Rcpp::List out( arr_len );
+    
+    // Rcpp::Rcout << "array_to_vector: " << std::endl;
     
     for( i = 0; i < arr_len; ++i ) {
       switch( array.at(i).type() ) {
@@ -149,7 +151,7 @@ inline SEXP simplify_matrix(
 ) {
   
   R_xlen_t i, j;
-  Rcpp::Rcout << "simplify matrix to " << r_type << std::endl;
+  // Rcpp::Rcout << "simplify matrix to " << r_type << std::endl;
   
   switch( r_type ) {
   case INTSXP: {
@@ -173,7 +175,7 @@ inline SEXP simplify_matrix(
         mat( i, j ) = this_val;
       }
     }
-    Rcpp::Rcout << "mat: " << mat << std::endl;
+    // Rcpp::Rcout << "mat: " << mat << std::endl;
     return mat;
     // }
   }
@@ -260,6 +262,8 @@ inline SEXP simplify_matrix(
     std::unordered_set< int > array_types;
     bool can_be_matrix = true;
     
+    // Rcpp::Rcout << "list_to_matrix: " << std::endl;
+    
     for( j = 0; j < n; ++j ) {
       SEXP s = array_of_array[j];
       int this_type = TYPEOF( s );
@@ -299,6 +303,8 @@ inline void list_to_vector(
     R_xlen_t& struct_type, // 1 vector, 2 matrix, 3 list
     bool fill_na
 ) {
+  
+  // Rcpp::Rcout << "list_to_vector: " << std::endl;
   
   Rcpp::List lst = columns[ this_name.c_str() ];
   R_xlen_t n_rows = lst.size();
@@ -441,6 +447,8 @@ inline SEXP simplify_dataframe_fill_na(
     R_xlen_t& doc_len
 ) {
   
+  // Rcpp::Rcout << "simplify_dataframe_fill_na: " << std::endl;
+  
   // the number of rows is equal to the number of list elements?
   // the number of columns is equal to the unique names
   R_xlen_t n_rows = out.size();
@@ -575,6 +583,8 @@ inline SEXP simplify_dataframe(
     Rcpp::List& out,
     R_xlen_t& doc_len
 ) {
+  
+  // Rcpp::Rcout << "simplify_dataframe: " << std::endl;
   
   // the number of rows is equal to the number of list elements?
   // the number of columns is equal to the unique names

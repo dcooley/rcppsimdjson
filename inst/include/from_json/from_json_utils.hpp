@@ -34,7 +34,7 @@ inline R_xlen_t where_is(
     R_xlen_t doc_len = arr.size();
     R_xlen_t i;
     for( i = 0; i < doc_len; ++i ) {
-      Rcpp::Rcout << "curr_dtype " <<  arr.at(i).type() << std::endl;
+      // Rcpp::Rcout << "curr_dtype " <<  arr.at(i).type() << std::endl;
       dtypes.insert( arr.at(i).type() );
     }
     return dtypes;
@@ -46,7 +46,7 @@ inline R_xlen_t where_is(
     //Rcpp::Rcout << "getting d types " << std::endl;
     
     for ( auto key_value : obj ) {
-      Rcpp::Rcout << "curr_dtype " << key_value.value.type() << std::endl;
+      // Rcpp::Rcout << "curr_dtype " << key_value.value.type() << std::endl;
       dtypes.insert( key_value.value.type() );
     }
     return dtypes;
