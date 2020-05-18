@@ -5,6 +5,19 @@
 
 using namespace Rcpp;
 
+// rcpp_from_json
+SEXP rcpp_from_json(std::string json, bool simplify, bool fill_na);
+RcppExport SEXP _RcppSimdJson_rcpp_from_json(SEXP jsonSEXP, SEXP simplifySEXP, SEXP fill_naSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type json(jsonSEXP);
+    Rcpp::traits::input_parameter< bool >::type simplify(simplifySEXP);
+    Rcpp::traits::input_parameter< bool >::type fill_na(fill_naSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_from_json(json, simplify, fill_na));
+    return rcpp_result_gen;
+END_RCPP
+}
 // validateJSON
 bool validateJSON(const std::string filename);
 RcppExport SEXP _RcppSimdJson_validateJSON(SEXP filenameSEXP) {
@@ -47,6 +60,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_RcppSimdJson_rcpp_from_json", (DL_FUNC) &_RcppSimdJson_rcpp_from_json, 3},
     {"_RcppSimdJson_validateJSON", (DL_FUNC) &_RcppSimdJson_validateJSON, 1},
     {"_RcppSimdJson_parseExample", (DL_FUNC) &_RcppSimdJson_parseExample, 0},
     {"_RcppSimdJson_cppVersion", (DL_FUNC) &_RcppSimdJson_cppVersion, 0},
