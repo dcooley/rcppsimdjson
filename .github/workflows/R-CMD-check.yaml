@@ -12,10 +12,10 @@ jobs:
       fail-fast: false
       matrix:
         config:
-        - { os: macOS-latest, r: 'release'}
-        # - { os: macOS-latest, r: 'dev'}
-        - { os: windows-latest, r: 'release'}
-        # - { os: windows-latest, r: 'dev'}
+        - { os: macOS-latest, r: 'release', args: "--no-manual"}
+        # - { os: macOS-latest, r: 'dev', args: "--no-manual"}
+        - { os: windows-latest, r: 'release', args: "--no-manual"}
+        # - { os: windows-latest, r: 'dev', args: "--no-manual"}
         - { os: ubuntu-latest, r: 'release'}
         # - { os: ubuntu-latest, r: 'dev'}
 
@@ -41,6 +41,12 @@ jobs:
           Rscript -e "install.packages('remotes')" -e "remotes::install_github('r-hub/sysreqs')"
           sysreqs=$(Rscript -e "cat(sysreqs::sysreq_commands('DESCRIPTION'))")
           sudo -s eval "$sysreqs"
+        
+      -name: Windows Arch
+       if: runner.os == 'Windows'
+       run: |
+        
+        
           
       - name: sessionInfo
         run: Rscript -e "sessionInfo()"
@@ -49,5 +55,10 @@ jobs:
         run: Rscript -e "install.packages('remotes')" -e "remotes::install_deps(dependencies = TRUE)" -e "remotes::install_cran('rcmdcheck')"
 
       - name: R CMD check                                        # `error_on = 'warning'` when upstream simdjson ready
-        run: Rscript -e "rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error', check_dir = 'check')" 
-
+        run: Rscript -e "Sys.setenv('BINPREF' = 'c:/rtools40/mingw65/bin/'); rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error', check_dir = 'check')" 
+        
+      - name: Test coverage
+        if: matrix.config.os == 'macOS-latest' && matrix.config.r == '3.6'
+        run: |
+          Rscript -e 'remotes::install_github("r-lib/covr@gh-actions")'
+          Rscript -e 'covr::codecov(token = "${{secrets.CODECOV_TOKEN}}")'
