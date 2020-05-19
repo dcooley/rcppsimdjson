@@ -25,7 +25,7 @@ jobs:
       CRAN: ${{ matrix.config.cran }}
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
 
       - uses: r-lib/actions/setup-r@master
         with:
@@ -41,9 +41,15 @@ jobs:
           Rscript -e "install.packages('remotes')" -e "remotes::install_github('r-hub/sysreqs')"
           sysreqs=$(Rscript -e "cat(sysreqs::sysreq_commands('DESCRIPTION'))")
           sudo -s eval "$sysreqs"
+          
+      - name: sessionInfo
+        run: Rscript -e "sessionInfo()"
 
       - name: R Dependencies
         run: Rscript -e "install.packages('remotes')" -e "remotes::install_deps(dependencies = TRUE)" -e "remotes::install_cran('rcmdcheck')"
+        
+      - name: tinytest
+        run: Rscript -e "tinytest::build_install_test()"
 
       - name: R CMD check                                        # `error_on = 'warning'` when upstream simdjson ready
         run: Rscript -e "rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error', check_dir = 'check')" 
