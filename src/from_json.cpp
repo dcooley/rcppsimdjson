@@ -9,29 +9,23 @@ SEXP rcpp_from_json( std::string json, bool simplify, bool fill_na ) {
   simdjson::dom::element doc = parser.parse( json );
   
   if( doc.is< bool >() ) {
-    Rcpp::LogicalVector x(1);
-    x[0] = doc.get< bool >();
-    return x;
+    return Rcpp::LogicalVector::create(doc);
   }
   
   if( doc.is< int64_t >() ) {
-    Rcpp::IntegerVector x(1);
-    x[0] = doc.get< int64_t >();
-    return x;
+    return rcppsimdjson::from_json::resolve_int<int64_t>(doc);
+  }
+
+  if( doc.is< uint64_t >() ) {
+    return rcppsimdjson::from_json::resolve_int<uint64_t>(doc);
   }
   
   if( doc.is< double >() ) {
-    Rcpp::NumericVector x(1);
-    x[0] = doc.get< double >();
-    return x;
+    return Rcpp::NumericVector::create(doc);
   }
   
   if( doc.is< std::string_view >() ) {
-    Rcpp::StringVector x(1);
-    std::string_view s = doc.get< std::string_view >();
-    std::string st = std::string( s ).c_str();
-    x[0] = st;
-    return x;
+    return Rcpp::StringVector::create(std::string(doc).c_str());
   }
   
   // TODO:
@@ -47,3 +41,4 @@ SEXP rcpp_from_json( std::string json, bool simplify, bool fill_na ) {
     );
 
 }
+

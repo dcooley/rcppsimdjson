@@ -55,12 +55,18 @@ namespace from_json {
         }
           
         case simdjson::dom::element_type::INT64: {
-          int64_t x = key_value.value.get< int64_t >();
+          // int64_t x = key_value.value.get< int64_t >();
           // Rcpp::Rcout << "x: " << x << std::endl;
-          out[i] = x;
+          // out[i] = x;
+          out[i] = resolve_int<int64_t>(key_value.value);
           break;
         }
-         
+
+        case simdjson::dom::element_type::UINT64: {
+          out[i] = resolve_int<uint64_t>(key_value.value);
+          break;
+        }
+
         case simdjson::dom::element_type::DOUBLE: {
           double x = key_value.value.get< double >();
           out[i] = x;
@@ -141,9 +147,13 @@ namespace from_json {
             
           case simdjson::dom::element_type::INT64: {
             sequential_array_counter = 0;
-            int64_t x = arr.at(i).get< int64_t >();
-            //Rcpp::Rcout<< "x: " << x << std::endl;
-            array_of_array[i] = x;
+            array_of_array[i] = resolve_int<int64_t>(arr.at(i));
+            break;
+          }
+
+          case simdjson::dom::element_type::UINT64: {
+            sequential_array_counter = 0;
+            array_of_array[i] = resolve_int<uint64_t>(arr.at(i));
             break;
           }
             

@@ -170,6 +170,26 @@ inline R_xlen_t where_is(
     columns[ this_column ] = new_column;
   }
 
+
+
+  template <typename int_T>
+  constexpr auto is_really_int64_t(int_T);
+
+  template <>
+  constexpr auto is_really_int64_t<uint64_t>(uint64_t x) {
+    return x > INT_MAX - 1;
+  }
+
+  template <>
+  constexpr auto is_really_int64_t<int64_t>(int64_t x) {
+    return x > INT_MAX - 1 || x < INT_MIN + 1;
+  }
+
+  template <typename int_T>
+  constexpr SEXP resolve_int(int_T x) {
+    return is_really_int64_t<int_T>(x) ? Rcpp::wrap<double>(x) : Rcpp::wrap<int>(x);
+  }
+
 } // from_json
 } // rcppsimdjson
 
