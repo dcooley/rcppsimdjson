@@ -1,8 +1,6 @@
 ## -*- mode: makefile; -*-
 
-CXX_STD = @CXXSTD@
+CXX17 = c:/rtools40/mingw64/bin/
 
 PKG_CXXFLAGS = -DSIMDJSON_NO_COMPUTED_GOTO -I../inst/include $(SHLIB_OPENMP_CXXFLAGS)
 PKG_LIBS= $(SHLIB_OPENMP_CXXFLAGS)
-
-c:/rtools40/mingw32/bin/
