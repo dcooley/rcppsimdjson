@@ -49,5 +49,5 @@ jobs:
         run: Rscript -e "install.packages('remotes')" -e "remotes::install_deps(dependencies = TRUE)" -e "remotes::install_cran('rcmdcheck')"
 
       - name: R CMD check                                        # `error_on = 'warning'` when upstream simdjson ready
-        run: Rscript -e "rcmdcheck::rcmdcheck(args = '--no-manual  --no-multiarch', error_on = 'error', check_dir = 'check')" 
+        run: Rscript -e "rcmdcheck::rcmdcheck(args = '--no-manual', build_args = '--no-multiarch' error_on = 'error', check_dir = 'check')" 
 
