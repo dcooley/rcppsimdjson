@@ -1,11 +1,4 @@
-on:
-  push:
-    branches:
-      - master
-      - dev
-  pull_request:
-    branches:
-      - master
+on: [push, pull_request]
 
 name: R-CMD-check
 
@@ -19,12 +12,18 @@ jobs:
       fail-fast: false
       matrix:
         config:
-        - { os: macOS-latest, r: '4.0'}
+        - { os: macOS-latest, r: 'release'}
+        - { os: macOS-latest, r: 'dev'}
+        - { os: windows-latest, r: 'release'}
+        - { os: windows-latest, r: 'dev'}
+        - { os: ubuntu-latest, r: 'release'}
         - { os: ubuntu-latest, r: '4.0'}
+        - { os: ubuntu-latest, r: 'release', cran: "https://demo.rstudiopm.com/all/__linux__/xenial/latest"}
+        - { os: ubuntu-latest, r: '4.0', cran: "https://demo.rstudiopm.com/all/__linux__/xenial/latest"}
 
     env:
-      R_REMOTES_NO_ERRORS_FROM_WARNINGS: false
-      _R_CHECK_FORCE_SUGGESTS_: false
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      _R_CHECK_FORCE_SUGGESTS_: true
       CRAN: ${{ matrix.config.cran }}
 
     steps:
