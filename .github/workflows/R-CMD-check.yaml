@@ -14,7 +14,7 @@ jobs:
         config:
         - { os: macOS-latest, r: 'release'}
         # - { os: macOS-latest, r: 'dev'}
-        # - { os: windows-latest, r: 'release'}
+        - { os: windows-latest, r: 'release'}
         # - { os: windows-latest, r: 'dev'}
         - { os: ubuntu-latest, r: 'release'}
         # - { os: ubuntu-latest, r: 'dev'}
