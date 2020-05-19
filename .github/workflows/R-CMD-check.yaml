@@ -49,10 +49,10 @@ jobs:
         run: Rscript -e "install.packages('remotes')" -e "remotes::install_deps(dependencies = TRUE)" -e "remotes::install_cran('rcmdcheck')"
 
       - name: R CMD check                                        # `error_on = 'warning'` when upstream simdjson ready
-        run: Rscript -e "Sys.setenv('BINPREF' = 'c:/rtools40/mingw64/bin/'); rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error', check_dir = 'check')" 
+        run: Rscript -e "rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error', check_dir = 'check')" 
         
       - name: Test coverage
         if: matrix.config.os == 'ubuntu-latest' && matrix.config.r == 'release'
         run: |
-          Rscript -e 'install.packages("covr")'
+          Rscript -e 'remotes::install_cran(c("curl", "httr", "covr")'
           Rscript -e 'covr::codecov(token = "${{secrets.CODECOV_TOKEN}}")'
