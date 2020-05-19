@@ -47,9 +47,6 @@ jobs:
 
       - name: R Dependencies
         run: Rscript -e "install.packages('remotes')" -e "remotes::install_deps(dependencies = TRUE)" -e "remotes::install_cran('rcmdcheck')"
-        
-      - name: tinytest
-        run: Rscript -e "tinytest::build_install_test()"
 
       - name: R CMD check                                        # `error_on = 'warning'` when upstream simdjson ready
         run: Rscript -e "rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error', check_dir = 'check')" 
