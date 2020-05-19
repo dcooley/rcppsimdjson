@@ -54,5 +54,5 @@ jobs:
       - name: Test coverage
         if: matrix.config.os == 'ubuntu-latest' && matrix.config.r == 'release'
         run: |
-          Rscript -e 'remotes::install_github("r-lib/covr@gh-actions")'
+          Rscript -e 'install.packages("covr")'
           Rscript -e 'covr::codecov(token = "${{secrets.CODECOV_TOKEN}}")'
