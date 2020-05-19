@@ -17,7 +17,7 @@ jobs:
         - { os: windows-latest, r: 'release'}
         # - { os: windows-latest, r: 'dev'}
         - { os: ubuntu-latest, r: 'release'}
-        - { os: ubuntu-latest, r: 'dev'}
+        # - { os: ubuntu-latest, r: 'dev'}
 
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
