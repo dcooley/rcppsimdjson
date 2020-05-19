@@ -46,5 +46,5 @@ jobs:
         run: Rscript -e "install.packages('remotes')" -e "remotes::install_deps(dependencies = TRUE)" -e "remotes::install_cran('rcmdcheck')"
 
       - name: R CMD check
-        run: Rscript -e "rcmdcheck::rcmdcheck(args = '--no-manual', check_dir = 'check')" 
+        run: Rscript -e "rcmdcheck::rcmdcheck(args = '--no-manual',  error_on = 'error', check_dir = 'check')" 
 
