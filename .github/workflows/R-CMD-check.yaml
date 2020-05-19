@@ -13,9 +13,9 @@ jobs:
       matrix:
         config:
         - { os: macOS-latest, r: 'release'}
-        - { os: macOS-latest, r: 'dev'}
+        # - { os: macOS-latest, r: 'dev'}
         - { os: windows-latest, r: 'release'}
-        - { os: windows-latest, r: 'dev'}
+        # - { os: windows-latest, r: 'dev'}
         - { os: ubuntu-latest, r: 'release'}
         - { os: ubuntu-latest, r: 'dev'}
 
@@ -25,7 +25,7 @@ jobs:
       CRAN: ${{ matrix.config.cran }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
 
       - uses: r-lib/actions/setup-r@master
         with:
@@ -45,6 +45,6 @@ jobs:
       - name: R Dependencies
         run: Rscript -e "install.packages('remotes')" -e "remotes::install_deps(dependencies = TRUE)" -e "remotes::install_cran('rcmdcheck')"
 
-      - name: R CMD check
-        run: Rscript -e "rcmdcheck::rcmdcheck(args = '--no-manual',  error_on = 'error', check_dir = 'check')" 
+      - name: R CMD check                                        # `error_on = 'warning'` when upstream simdjson ready
+        run: Rscript -e "rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error', check_dir = 'check')" 
 
