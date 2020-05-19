@@ -14,7 +14,7 @@ jobs:
         config:
         - { os: macOS-latest, r: 'release', args: "--no-manual"}
         # - { os: macOS-latest, r: 'dev', args: "--no-manual"}
-        - { os: windows-latest, r: 'release', args: "--no-manual, --x64"}
+        - { os: windows-latest, r: 'release', args: "--no-manual"}
         # - { os: windows-latest, r: 'dev', args: "--no-manual"}
         - { os: ubuntu-latest, r: 'release'}
         # - { os: ubuntu-latest, r: 'dev'}
@@ -49,5 +49,5 @@ jobs:
         run: Rscript -e "install.packages('remotes')" -e "remotes::install_deps(dependencies = TRUE)" -e "remotes::install_cran('rcmdcheck')"
 
       - name: R CMD check                                        # `error_on = 'warning'` when upstream simdjson ready
-        run: Rscript -e "rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error', check_dir = 'check')" 
+        run: Rscript -e "rcmdcheck::rcmdcheck(args = '--no-manual  --no-multiarch', error_on = 'error', check_dir = 'check')" 
 
