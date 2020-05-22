@@ -16,12 +16,12 @@ expect_identical(
   "3000000000"
 )
 
-expect_identical(
+expect_equal(
   RcppSimdJson:::.check_int64(is_signed = TRUE, integer64 = 2),
-  bit64::as.integer64("3000000000")
+  structure(1.48219693752374e-314, class = "integer64")
 )
-expect_identical(
+expect_equal(
   RcppSimdJson:::.check_int64(is_signed = FALSE, integer64 = 2),
-  bit64::as.integer64("3000000000")
+  structure(1.48219693752374e-314, class = "integer64")
 )
 
