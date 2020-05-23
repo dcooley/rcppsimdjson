@@ -19,4 +19,4 @@ LinkingTo: Rcpp
 Suggests: tinytest, jsonify
 RoxygenNote: 7.1.0
 Encoding: UTF-8
-Biarch: FALSE
+Biarch: No
