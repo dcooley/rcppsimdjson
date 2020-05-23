@@ -1,5 +1,10 @@
+
 #ifndef RCPPSIMDJSON_HPP
 #define RCPPSIMDJSON_HPP
+
+#define STRICT_R_HEADERS
+#include <Rcpp.h>
+
 
 // #if __cplusplus >= 202002L
 // #define RCPPSIMDJSON_AT_LEAST_CPP20
@@ -17,7 +22,6 @@
 // #define RCPPSIMDJSON_AT_LEAST_CPP11
 // #endif
 
-#include <Rcpp.h>
 
 #include <RcppSimdJson/utils.hpp>
 #include <RcppSimdJson/parse_json.hpp>

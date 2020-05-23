@@ -1,10 +1,5 @@
 #include <RcppSimdJson.hpp>
 
-// #if __cplusplus >= 201703L
-// #include "simdjson.h"
-// #include "simdjson.cpp"
-// #endif
-
 // [[Rcpp::export(.parse_json)]]
 SEXP parse_json(const Rcpp::String& x, const int int64_T = 0) {
   using rcppsimdjson::parse_json::parse_element;
