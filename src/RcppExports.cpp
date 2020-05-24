@@ -5,6 +5,31 @@
 
 using namespace Rcpp;
 
+// parse_json
+SEXP parse_json(const Rcpp::String& x, const int int64_T);
+RcppExport SEXP _RcppSimdJson_parse_json(SEXP xSEXP, SEXP int64_TSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::String& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const int >::type int64_T(int64_TSEXP);
+    rcpp_result_gen = Rcpp::wrap(parse_json(x, int64_T));
+    return rcpp_result_gen;
+END_RCPP
+}
+// query_json
+SEXP query_json(const Rcpp::String& x, const std::string& json_pointer, const int int64_T);
+RcppExport SEXP _RcppSimdJson_query_json(SEXP xSEXP, SEXP json_pointerSEXP, SEXP int64_TSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::String& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type json_pointer(json_pointerSEXP);
+    Rcpp::traits::input_parameter< const int >::type int64_T(int64_TSEXP);
+    rcpp_result_gen = Rcpp::wrap(query_json(x, json_pointer, int64_T));
+    return rcpp_result_gen;
+END_RCPP
+}
 // check_int64
 SEXP check_int64();
 RcppExport SEXP _RcppSimdJson_check_int64() {
@@ -57,6 +82,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_RcppSimdJson_parse_json", (DL_FUNC) &_RcppSimdJson_parse_json, 2},
+    {"_RcppSimdJson_query_json", (DL_FUNC) &_RcppSimdJson_query_json, 3},
     {"_RcppSimdJson_check_int64", (DL_FUNC) &_RcppSimdJson_check_int64, 0},
     {"_RcppSimdJson_validateJSON", (DL_FUNC) &_RcppSimdJson_validateJSON, 1},
     {"_RcppSimdJson_parseExample", (DL_FUNC) &_RcppSimdJson_parseExample, 0},

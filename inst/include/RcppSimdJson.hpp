@@ -4,5 +4,6 @@
 #include <Rcpp.h>
 
 #include <RcppSimdJson/utils.hpp>
+#include <RcppSimdJson/parse_json.hpp>
 
 #endif
